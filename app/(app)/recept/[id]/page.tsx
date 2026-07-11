@@ -1,0 +1,318 @@
+"use client";
+
+import { useEffect, useState, use } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
+import { createClient } from "@/lib/supabase/client";
+import { getSignedUrl } from "@/lib/images";
+import { scaleQty, servingsWord } from "@/lib/scale";
+import { useWakeLock } from "@/lib/useWakeLock";
+import type { Recipe, RecipeNote } from "@/lib/types";
+import Stars from "@/components/Stars";
+import {
+  IconBack,
+  IconClock,
+  IconBook,
+  IconPencil,
+  IconTrash,
+  IconPot,
+  IconCheck,
+  IconPlus,
+} from "@/components/icons";
+
+export default function RecipeDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
+  const router = useRouter();
+  const [recipe, setRecipe] = useState<Recipe | null>(null);
+  const [notes, setNotes] = useState<RecipeNote[]>([]);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [servings, setServings] = useState<number | null>(null);
+  const [noteText, setNoteText] = useState("");
+  const [missing, setMissing] = useState(false);
+
+  useWakeLock();
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from("recipes")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle()
+      .then(async ({ data }) => {
+        if (!data) {
+          setMissing(true);
+          return;
+        }
+        const r = data as Recipe;
+        setRecipe(r);
+        setServings(r.servings);
+        if (r.image_path) setImageUrl(await getSignedUrl(r.image_path));
+      });
+    supabase
+      .from("recipe_notes")
+      .select("*")
+      .eq("recipe_id", id)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => setNotes((data ?? []) as RecipeNote[]));
+  }, [id]);
+
+  async function setRating(value: number) {
+    if (!recipe) return;
+    setRecipe({ ...recipe, rating: value || null });
+    const supabase = createClient();
+    await supabase
+      .from("recipes")
+      .update({ rating: value || null })
+      .eq("id", recipe.id);
+  }
+
+  async function markCookedToday() {
+    if (!recipe) return;
+    const today = new Date().toISOString().slice(0, 10);
+    setRecipe({ ...recipe, last_cooked: today });
+    const supabase = createClient();
+    await supabase
+      .from("recipes")
+      .update({ last_cooked: today })
+      .eq("id", recipe.id);
+  }
+
+  async function addNote(e: React.FormEvent) {
+    e.preventDefault();
+    if (!recipe || !noteText.trim()) return;
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("recipe_notes")
+      .insert({ recipe_id: recipe.id, text: noteText.trim() })
+      .select("*")
+      .single();
+    if (data) {
+      setNotes([data as RecipeNote, ...notes]);
+      setNoteText("");
+    }
+  }
+
+  async function deleteNote(noteId: string) {
+    setNotes(notes.filter((n) => n.id !== noteId));
+    const supabase = createClient();
+    await supabase.from("recipe_notes").delete().eq("id", noteId);
+  }
+
+  async function deleteRecipe() {
+    if (!recipe) return;
+    if (!confirm(`Opravdu smazat recept „${recipe.title}“?`)) return;
+    const supabase = createClient();
+    await supabase.from("recipes").delete().eq("id", recipe.id);
+    router.push("/");
+    router.refresh();
+  }
+
+  if (missing) {
+    return (
+      <main className="py-20 text-center text-sm text-slate-500">
+        Recept nenalezen.{" "}
+        <Link href="/" className="text-cyan-600">
+          Zpět na seznam
+        </Link>
+      </main>
+    );
+  }
+
+  if (!recipe || servings === null) {
+    return (
+      <main className="py-20 text-center text-sm text-slate-400">Načítám…</main>
+    );
+  }
+
+  const factor = servings / recipe.servings;
+
+  return (
+    <main>
+      <div className="mb-4 flex items-center justify-between">
+        <Link
+          href="/"
+          aria-label="Zpět"
+          className="soft-shadow flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-500"
+        >
+          <IconBack size={18} />
+        </Link>
+        <div className="flex gap-2">
+          <Link
+            href={`/recept/${recipe.id}/upravit`}
+            aria-label="Upravit recept"
+            className="soft-shadow flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-500"
+          >
+            <IconPencil size={17} />
+          </Link>
+          <button
+            onClick={deleteRecipe}
+            aria-label="Smazat recept"
+            className="soft-shadow flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-400 active:text-pink-500"
+          >
+            <IconTrash size={17} />
+          </button>
+        </div>
+      </div>
+
+      {imageUrl ? (
+        <div className="card relative mb-4 h-48 overflow-hidden">
+          <Image
+            src={imageUrl}
+            alt={recipe.title}
+            fill
+            className="object-cover"
+            unoptimized
+          />
+        </div>
+      ) : (
+        <div className="card mb-4 flex h-32 flex-col items-center justify-center gap-1 text-slate-300">
+          <IconPot size={30} />
+          <span className="text-xs">zatím bez fotky</span>
+        </div>
+      )}
+
+      <div className="flex items-start justify-between gap-3">
+        <h1 className="text-xl font-medium">{recipe.title}</h1>
+        <Stars value={recipe.rating ?? 0} size={18} onChange={setRating} />
+      </div>
+
+      <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
+        {recipe.time_minutes ? (
+          <span className="inline-flex items-center gap-1">
+            <IconClock size={14} /> {recipe.time_minutes} min
+          </span>
+        ) : null}
+        <span>{recipe.category}</span>
+        {recipe.source ? (
+          <span className="inline-flex items-center gap-1">
+            <IconBook size={14} /> {recipe.source}
+          </span>
+        ) : null}
+      </p>
+
+      {recipe.last_cooked ? (
+        <p className="mt-1 text-xs text-slate-400">
+          Naposledy vařeno{" "}
+          {new Date(recipe.last_cooked).toLocaleDateString("cs-CZ")}
+        </p>
+      ) : null}
+
+      <div className="card mt-4 flex items-center justify-between px-4 py-2.5">
+        <button
+          onClick={() => setServings(Math.max(1, servings - 1))}
+          aria-label="Méně porcí"
+          className="soft-shadow flex h-9 w-9 items-center justify-center rounded-full bg-white text-lg font-medium text-cyan-600 active:scale-90 transition-transform"
+        >
+          −
+        </button>
+        <span className="text-[15px] font-medium">
+          {servings} {servingsWord(servings)}
+          {servings !== recipe.servings ? (
+            <button
+              onClick={() => setServings(recipe.servings)}
+              className="ml-2 text-xs font-normal text-cyan-600"
+            >
+              původně {recipe.servings}
+            </button>
+          ) : null}
+        </span>
+        <button
+          onClick={() => setServings(Math.min(24, servings + 1))}
+          aria-label="Více porcí"
+          className="soft-shadow flex h-9 w-9 items-center justify-center rounded-full bg-white text-lg font-medium text-cyan-600 active:scale-90 transition-transform"
+        >
+          +
+        </button>
+      </div>
+
+      {recipe.ingredients.length > 0 && (
+        <>
+          <h2 className="mt-5 mb-2 text-[15px] font-medium">Suroviny</h2>
+          <div className="card px-4 py-1">
+            {recipe.ingredients.map((ing, i) => (
+              <div
+                key={i}
+                className="flex items-baseline justify-between gap-3 border-b border-slate-100 py-2.5 text-[15px] last:border-b-0"
+              >
+                <span className="text-slate-700">{ing.name}</span>
+                <span className="shrink-0 font-medium text-cyan-700">
+                  {scaleQty(ing.qty, ing.unit, factor).text}
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {recipe.steps.length > 0 && (
+        <>
+          <h2 className="mt-5 mb-2 text-[15px] font-medium">Postup</h2>
+          <ol className="flex flex-col gap-3">
+            {recipe.steps.map((step, i) => (
+              <li key={i} className="card flex gap-3 p-4">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-cyan-100 text-sm font-medium text-cyan-700">
+                  {i + 1}
+                </span>
+                <span className="text-[15px] leading-relaxed text-slate-700">
+                  {step}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </>
+      )}
+
+      <button
+        onClick={markCookedToday}
+        className="soft-shadow mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-white py-3 font-medium text-cyan-600 active:scale-[0.99] transition-transform"
+      >
+        <IconCheck size={18} /> Dnes uvařeno
+      </button>
+
+      <h2 className="mt-6 mb-2 text-[15px] font-medium">Poznámky</h2>
+      <form onSubmit={addNote} className="flex gap-2">
+        <input
+          value={noteText}
+          onChange={(e) => setNoteText(e.target.value)}
+          placeholder="Příště méně cukru…"
+          className="soft-shadow w-full rounded-xl bg-white px-3 py-2.5 text-[15px]"
+        />
+        <button
+          type="submit"
+          aria-label="Přidat poznámku"
+          className="chip-active-shadow flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-500 text-white"
+        >
+          <IconPlus size={20} />
+        </button>
+      </form>
+      <div className="mt-3 flex flex-col gap-2 pb-4">
+        {notes.map((n) => (
+          <div
+            key={n.id}
+            className="soft-shadow flex items-start justify-between gap-3 rounded-xl bg-pink-50 px-4 py-3"
+          >
+            <div>
+              <p className="text-sm text-pink-900">{n.text}</p>
+              <p className="mt-0.5 text-[11px] text-pink-400">
+                {new Date(n.created_at).toLocaleDateString("cs-CZ")}
+              </p>
+            </div>
+            <button
+              onClick={() => deleteNote(n.id)}
+              aria-label="Smazat poznámku"
+              className="mt-0.5 shrink-0 text-pink-300 active:text-pink-500"
+            >
+              <IconTrash size={15} />
+            </button>
+          </div>
+        ))}
+      </div>
+    </main>
+  );
+}
