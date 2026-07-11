@@ -132,6 +132,24 @@ export function IconCheck(p: IconProps) {
   );
 }
 
+export function IconCalendar(p: IconProps) {
+  return (
+    <svg {...base(p)}>
+      <rect x="4" y="5" width="16" height="15" rx="2" />
+      <path d="M4 9.5h16M8.5 3v4M15.5 3v4" />
+    </svg>
+  );
+}
+
+export function IconShare(p: IconProps) {
+  return (
+    <svg {...base(p)}>
+      <path d="M12 14V4m0 0L8.5 7.5M12 4l3.5 3.5" />
+      <path d="M6 11v8h12v-8" />
+    </svg>
+  );
+}
+
 export function IconStar({
   size = 20,
   className,

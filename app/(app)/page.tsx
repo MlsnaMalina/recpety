@@ -15,6 +15,7 @@ export default function HomePage() {
   const [images, setImages] = useState<Record<string, string>>({});
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string | null>(null);
+  const [sort, setSort] = useState<"newest" | "top">("newest");
 
   useEffect(() => {
     const supabase = createClient();
@@ -50,8 +51,11 @@ export default function HomePage() {
         );
       });
     }
+    if (sort === "top") {
+      rows = [...rows].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+    }
     return rows;
-  }, [recipes, query, category]);
+  }, [recipes, query, category, sort]);
 
   async function signOut() {
     const supabase = createClient();
@@ -110,6 +114,31 @@ export default function HomePage() {
               {c}
             </button>
           ))}
+        </div>
+      )}
+
+      {(recipes?.length ?? 0) > 0 && (
+        <div className="mt-3 flex gap-2">
+          <button
+            onClick={() => setSort("newest")}
+            className={`rounded-full px-3 py-1 text-xs font-medium ${
+              sort === "newest"
+                ? "soft-shadow bg-white text-cyan-700"
+                : "text-slate-400"
+            }`}
+          >
+            Nejnovější
+          </button>
+          <button
+            onClick={() => setSort("top")}
+            className={`rounded-full px-3 py-1 text-xs font-medium ${
+              sort === "top"
+                ? "soft-shadow bg-white text-pink-600"
+                : "text-slate-400"
+            }`}
+          >
+            ★ Nejoblíbenější
+          </button>
         </div>
       )}
 

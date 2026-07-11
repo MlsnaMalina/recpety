@@ -29,6 +29,19 @@ export type RecipeNote = {
   created_at: string;
 };
 
+export type CookEvent = {
+  id: string;
+  recipe_id: string;
+  user_id: string;
+  cooked_on: string;
+  created_at: string;
+  recipes?: {
+    title: string;
+    rating: number | null;
+    category: string;
+  } | null;
+};
+
 export const CATEGORIES = [
   "Polévky",
   "Hlavní jídla",

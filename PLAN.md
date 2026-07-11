@@ -46,8 +46,14 @@ i stažených z webu. Minimalistická, vzdušná, stavěná primárně na mobil.
 **Supabase projekt:** Recepty (mjeqymqobpijsskcyjor, eu-central-1)
 **Vercel projekt:** moje-recepty (deploy přes `vercel --prod`, zatím bez GitHubu — chybí `gh` CLI)
 
+### Fáze 1.5 — Kalendář a sdílení ✅ hotovo 11. 7. 2026
+- [x] GitHub propojen (https://github.com/MlsnaMalina/recpety) + automatické nasazování na Vercel
+- [x] Kalendář vaření — měsíční pohled, puntíky u dnů, rozkliknutí dne se seznamem uvařených jídel
+- [x] „Dnes uvařeno“ zapisuje záznam do kalendáře (tabulka cook_events)
+- [x] Řazení receptů „Nejnovější / ★ Nejoblíbenější“
+- [x] Sdílení receptu jako obrázek (WhatsApp a spol. přes systémové sdílení, jinak stažení PNG)
+
 Drobnosti na doladění ve fázi 2:
-- [ ] Propojit repozitář s GitHubem (vyžaduje přihlášení ke GitHub účtu)
 - [ ] V Supabase nastavit Site URL na produkční adresu (kvůli registračním e-mailům)
 - [ ] Změna hesla přímo v aplikaci
 

@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getSignedUrl } from "@/lib/images";
 import { scaleQty, servingsWord } from "@/lib/scale";
 import { useWakeLock } from "@/lib/useWakeLock";
+import { shareRecipeAsImage } from "@/lib/shareImage";
 import type { Recipe, RecipeNote } from "@/lib/types";
 import Stars from "@/components/Stars";
 import {
@@ -19,6 +20,7 @@ import {
   IconPot,
   IconCheck,
   IconPlus,
+  IconShare,
 } from "@/components/icons";
 
 export default function RecipeDetailPage({
@@ -34,6 +36,12 @@ export default function RecipeDetailPage({
   const [servings, setServings] = useState<number | null>(null);
   const [noteText, setNoteText] = useState("");
   const [missing, setMissing] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  function showToast(text: string) {
+    setToast(text);
+    setTimeout(() => setToast(null), 2500);
+  }
 
   useWakeLock();
 
@@ -74,13 +82,36 @@ export default function RecipeDetailPage({
 
   async function markCookedToday() {
     if (!recipe) return;
-    const today = new Date().toISOString().slice(0, 10);
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     setRecipe({ ...recipe, last_cooked: today });
     const supabase = createClient();
     await supabase
       .from("recipes")
       .update({ last_cooked: today })
       .eq("id", recipe.id);
+    const { data: existing } = await supabase
+      .from("cook_events")
+      .select("id")
+      .eq("recipe_id", recipe.id)
+      .eq("cooked_on", today)
+      .limit(1);
+    if (!existing?.length) {
+      await supabase
+        .from("cook_events")
+        .insert({ recipe_id: recipe.id, cooked_on: today });
+    }
+    showToast("Zapsáno do kalendáře vaření");
+  }
+
+  async function share() {
+    if (!recipe || servings === null) return;
+    const result = await shareRecipeAsImage(recipe, servings);
+    if (result === "downloaded") {
+      showToast("Obrázek receptu je stažený v Souborech");
+    } else if (result === "failed") {
+      showToast("Sdílení se nepovedlo");
+    }
   }
 
   async function addNote(e: React.FormEvent) {
@@ -134,6 +165,11 @@ export default function RecipeDetailPage({
 
   return (
     <main>
+      {toast && (
+        <div className="soft-shadow fixed left-1/2 top-4 z-30 -translate-x-1/2 rounded-full bg-slate-800 px-4 py-2 text-sm text-white">
+          {toast}
+        </div>
+      )}
       <div className="mb-4 flex items-center justify-between">
         <Link
           href="/"
@@ -143,6 +179,13 @@ export default function RecipeDetailPage({
           <IconBack size={18} />
         </Link>
         <div className="flex gap-2">
+          <button
+            onClick={share}
+            aria-label="Sdílet recept jako obrázek"
+            className="soft-shadow flex h-9 w-9 items-center justify-center rounded-full bg-white text-cyan-600"
+          >
+            <IconShare size={17} />
+          </button>
           <Link
             href={`/recept/${recipe.id}/upravit`}
             aria-label="Upravit recept"

@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconHome, IconPlus, IconCart } from "./icons";
+import { IconHome, IconPlus, IconCart, IconCalendar } from "./icons";
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const onHome = pathname === "/";
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-20">
@@ -14,12 +13,21 @@ export default function BottomNav() {
         <div className="card mb-3 flex items-center justify-around px-2 py-2">
           <Link
             href="/"
-            className={`flex flex-col items-center gap-0.5 px-4 py-1 text-[11px] font-medium ${
-              onHome ? "text-blue-500" : "text-slate-400"
+            className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] font-medium ${
+              pathname === "/" ? "text-blue-500" : "text-slate-400"
             }`}
           >
             <IconHome size={22} />
             Recepty
+          </Link>
+          <Link
+            href="/kalendar"
+            className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] font-medium ${
+              pathname === "/kalendar" ? "text-blue-500" : "text-slate-400"
+            }`}
+          >
+            <IconCalendar size={22} />
+            Kalendář
           </Link>
           <Link
             href="/recept/novy"
@@ -29,7 +37,7 @@ export default function BottomNav() {
             <IconPlus size={26} />
           </Link>
           <span
-            className="flex cursor-default flex-col items-center gap-0.5 px-4 py-1 text-[11px] text-slate-300"
+            className="flex cursor-default flex-col items-center gap-0.5 px-3 py-1 text-[11px] text-slate-300"
             title="Připravujeme"
           >
             <IconCart size={22} />
