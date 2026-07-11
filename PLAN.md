@@ -33,14 +33,23 @@ i stažených z webu. Minimalistická, vzdušná, stavěná primárně na mobil.
 
 ## Fáze
 
-### Fáze 1 — Základ (první funkční verze)
-- [ ] Založení projektu, databáze Supabase, přihlášení e-mailem
-- [ ] Přidání a úprava receptu ručně (suroviny, postup, kategorie, fotka jídla, zdroj)
-- [ ] Seznam receptů — čisté kartičky s jemnými stíny, filtrování podle kategorií
-- [ ] Vyhledávání podle názvu i surovin („co uvařím z cukety?“)
-- [ ] Detail receptu s posuvníkem porcí a přepočtem surovin
-- [ ] Hodnocení a poznámky
-- [ ] Nasazení na Vercel + instalace na plochu telefonu (PWA)
+### Fáze 1 — Základ (první funkční verze) ✅ hotovo 11. 7. 2026
+- [x] Založení projektu, databáze Supabase, přihlášení e-mailem
+- [x] Přidání a úprava receptu ručně (suroviny, postup, kategorie, fotka jídla, zdroj)
+- [x] Seznam receptů — čisté kartičky s jemnými stíny, filtrování podle kategorií
+- [x] Vyhledávání podle názvu i surovin — funguje i bez diakritiky
+- [x] Detail receptu s přepočtem porcí (tlačítka − / +), obrazovka nezhasíná při vaření
+- [x] Hodnocení (růžové hvězdičky), poznámky, tlačítko „Dnes uvařeno“
+- [x] Nasazení na Vercel + PWA manifest a ikony
+
+**Produkce:** https://moje-recepty-iota.vercel.app
+**Supabase projekt:** Recepty (mjeqymqobpijsskcyjor, eu-central-1)
+**Vercel projekt:** moje-recepty (deploy přes `vercel --prod`, zatím bez GitHubu — chybí `gh` CLI)
+
+Drobnosti na doladění ve fázi 2:
+- [ ] Propojit repozitář s GitHubem (vyžaduje přihlášení ke GitHub účtu)
+- [ ] V Supabase nastavit Site URL na produkční adresu (kvůli registračním e-mailům)
+- [ ] Změna hesla přímo v aplikaci
 
 ### Fáze 2 — Foto-import ✨ (hlavní kouzlo)
 - [ ] Založení Anthropic účtu a API klíče (provedu krok za krokem; cena ~1 Kč za fotku)
