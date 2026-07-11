@@ -117,6 +117,70 @@ export async function extractRecipeFromImages(
   return runExtraction(content);
 }
 
+const ComponentAssignmentSchema = z.object({
+  split: z
+    .boolean()
+    .describe("true, pokud se recept smysluplně skládá ze 2+ samostatných částí"),
+  ingredientComponents: z
+    .array(z.string())
+    .describe(
+      "Pro každou surovinu (ve stejném pořadí a počtu jako na vstupu) název části. Prázdný řetězec jen pro obecné suroviny (sůl, pepř)."
+    ),
+  stepComponents: z
+    .array(z.string())
+    .describe(
+      "Pro každý krok postupu (ve stejném pořadí a počtu jako na vstupu) název části."
+    ),
+});
+
+const SPLIT_SYSTEM = `Jsi kuchařský asistent. Dostaneš hotový recept (název, očíslované suroviny, očíslované kroky) a tvým úkolem je rozpoznat, zda se skládá z několika samostatných částí — např. hlavní jídlo + omáčka/dip, těsto + náplň + poleva, maso + příloha + pečivo.
+
+- Pokud ano, přiřaď KAŽDÉ surovině i kroku krátký výstižný název části (např. „Tzatziki", „Kuřecí kousky", „Pita", „Těsto", „Poleva"). split = true.
+- Vrať pole ingredientComponents a stepComponents přesně ve stejném počtu a pořadí jako vstup. Nepřehazuj pořadí, nic nevynechávej ani nepřidávej.
+- Obecné suroviny (sůl, pepř, olej) přiřaď k části, kde se používají; jen když to nejde určit, nech prázdné.
+- Pokud je recept jednolité jídno bez smysluplných částí, vrať split = false a prázdná pole.`;
+
+export async function assignComponents(
+  title: string,
+  ingredientNames: string[],
+  stepTexts: string[]
+): Promise<{ ingredientComponents: string[]; stepComponents: string[] } | null> {
+  const client = new Anthropic();
+  const numberedIng = ingredientNames.map((n, i) => `${i + 1}. ${n}`).join("\n");
+  const numberedSteps = stepTexts.map((n, i) => `${i + 1}. ${n}`).join("\n");
+
+  const response = await client.messages.parse({
+    model: "claude-opus-4-8",
+    max_tokens: 8000,
+    thinking: { type: "adaptive" },
+    output_config: {
+      effort: "medium",
+      format: zodOutputFormat(ComponentAssignmentSchema),
+    },
+    system: SPLIT_SYSTEM,
+    messages: [
+      {
+        role: "user",
+        content: `Recept: ${title}\n\nSuroviny:\n${numberedIng}\n\nPostup:\n${numberedSteps}`,
+      },
+    ],
+  });
+
+  if (response.stop_reason === "refusal") return null;
+  const p = response.parsed_output;
+  if (!p || !p.split) return null;
+  if (
+    p.ingredientComponents.length !== ingredientNames.length ||
+    p.stepComponents.length !== stepTexts.length
+  ) {
+    return null;
+  }
+  return {
+    ingredientComponents: p.ingredientComponents,
+    stepComponents: p.stepComponents,
+  };
+}
+
 export async function extractRecipeFromText(
   pageText: string
 ): Promise<RecipeExtraction | null> {

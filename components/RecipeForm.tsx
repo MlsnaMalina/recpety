@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { uploadPhoto, deletePhoto } from "@/lib/images";
+import { resizeImageForUpload } from "@/lib/clientImage";
 import { parseSpokenIngredient } from "@/lib/parseIngredient";
 import { stepText, stepComponent } from "@/lib/recipeParts";
 import { useDictation } from "@/lib/useDictation";
@@ -158,7 +159,8 @@ export default function RecipeForm({ recipe, existingImageUrl, prefill }: Props)
 
     let imagePath = recipe?.image_path ?? null;
     if (file) {
-      const uploaded = await uploadPhoto(OWNER_ID, file);
+      const resized = await resizeImageForUpload(file);
+      const uploaded = await uploadPhoto(OWNER_ID, resized);
       if (!uploaded) {
         setError("Nahrání fotky se nepovedlo. Zkuste to znovu.");
         setBusy(false);

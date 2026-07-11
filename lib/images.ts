@@ -25,14 +25,14 @@ export async function getSignedUrls(
 
 export async function uploadPhoto(
   userId: string,
-  file: File
+  file: Blob
 ): Promise<string | null> {
   const supabase = createClient();
-  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-  const path = `${userId}/${crypto.randomUUID()}.${ext}`;
+  const path = `${userId}/${crypto.randomUUID()}.jpg`;
   const { error } = await supabase.storage.from("photos").upload(path, file, {
     cacheControl: "3600",
     upsert: false,
+    contentType: "image/jpeg",
   });
   if (error) return null;
   return path;

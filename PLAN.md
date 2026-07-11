@@ -104,6 +104,13 @@ teď otevřená pro kohokoli, kdo zná adresu https://moje-recepty-iota.vercel.a
 - [x] Diktování hlasem (mikrofon u názvu, surovin i postupu; u surovin převede řeč na
   množství + jednotku + název; funguje hlavně v Chrome/Androidu)
 
+### Fáze 5.1 — Doladění (11. 7. 2026)
+- [x] Zrychlení domovské stránky — fotky se při nahrávání zmenšují na max 1400 px
+  (dřív se ukládaly v plné velikosti z foťáku, jedna měla 3,3 MB); existující velká
+  fotka jednorázově zmenšena. Načítání mřížky kleslo ze 4 MB na 0,9 MB.
+- [x] Tlačítko „Rozdělit na části pomocí AI" na detailu receptu — u receptů bez částí
+  je AI rozebere jedním ťuknutím (gyros → Kuře / Pita / Tzatziki / Brambory / Podávání)
+
 ## Zásady
 
 - Mobil na prvním místě — v kuchyni je v ruce telefon (velká písmena u postupu,

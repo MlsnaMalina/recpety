@@ -16,7 +16,7 @@ import {
   stepComponent,
   ingredientComponent,
 } from "@/lib/recipeParts";
-import type { Recipe, RecipeNote } from "@/lib/types";
+import type { Recipe, RecipeNote, RecipeStep } from "@/lib/types";
 import Stars from "@/components/Stars";
 import {
   IconBack,
@@ -29,6 +29,7 @@ import {
   IconPlus,
   IconShare,
   IconCart,
+  IconWand,
 } from "@/components/icons";
 
 export default function RecipeDetailPage({
@@ -46,6 +47,7 @@ export default function RecipeDetailPage({
   const [missing, setMissing] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [selComp, setSelComp] = useState<string | null>(null);
+  const [splitting, setSplitting] = useState(false);
 
   function showToast(text: string) {
     setToast(text);
@@ -137,6 +139,57 @@ export default function RecipeDetailPage({
         ? `Přidáno do nákupního seznamu (${count} ${count === 1 ? "položka" : count < 5 ? "položky" : "položek"})`
         : "Recept nemá žádné suroviny"
     );
+  }
+
+  async function splitRecipe() {
+    if (!recipe) return;
+    setSplitting(true);
+    try {
+      const res = await fetch("/api/split-recipe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: recipe.title,
+          ingredients: recipe.ingredients.map((i) => i.name),
+          steps: recipe.steps.map((s) => stepText(s)),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(
+          typeof data.error === "string" ? data.error : "Rozdělení se nepovedlo"
+        );
+        setSplitting(false);
+        return;
+      }
+      if (!data.split) {
+        showToast("Tenhle recept je jednolitý — nedá se rozumně rozdělit.");
+        setSplitting(false);
+        return;
+      }
+      const ic: string[] = data.ingredientComponents;
+      const sc: string[] = data.stepComponents;
+      const newIngredients = recipe.ingredients.map((ing, idx) => {
+        const c = (ic[idx] ?? "").trim();
+        return c ? { ...ing, component: c } : { ...ing, component: undefined };
+      });
+      const newSteps: RecipeStep[] = recipe.steps.map((s, idx) => {
+        const c = (sc[idx] ?? "").trim();
+        const txt = stepText(s);
+        return c ? { text: txt, component: c } : txt;
+      });
+      const supabase = createClient();
+      await supabase
+        .from("recipes")
+        .update({ ingredients: newIngredients, steps: newSteps })
+        .eq("id", recipe.id);
+      setRecipe({ ...recipe, ingredients: newIngredients, steps: newSteps });
+      setSelComp(null);
+      showToast("Recept rozdělen na části ✨");
+    } catch {
+      showToast("Rozdělení se nepovedlo. Zkuste to znovu.");
+    }
+    setSplitting(false);
   }
 
   async function addNote(e: React.FormEvent) {
@@ -350,6 +403,19 @@ export default function RecipeDetailPage({
             </button>
           ))}
         </div>
+      )}
+
+      {components.length === 0 && recipe.ingredients.length >= 4 && (
+        <button
+          onClick={splitRecipe}
+          disabled={splitting}
+          className="soft-shadow mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-white py-2.5 text-sm font-medium text-pink-600 disabled:opacity-60"
+        >
+          <IconWand size={17} />
+          {splitting
+            ? "Rozděluji recept… (~půl minuty)"
+            : "Rozdělit na části pomocí AI"}
+        </button>
       )}
 
       {visibleIngredients.length > 0 && (

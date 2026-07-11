@@ -132,6 +132,15 @@ export function IconCheck(p: IconProps) {
   );
 }
 
+export function IconWand(p: IconProps) {
+  return (
+    <svg {...base(p)}>
+      <path d="M15 4V2M15 10V8M20 5.5h2M8 5.5H6M18 8l1.4-1.4M12 8l-8 8 2 2 8-8" />
+      <path d="M17.5 7.5 19 9" />
+    </svg>
+  );
+}
+
 export function IconMic(p: IconProps) {
   return (
     <svg {...base(p)}>
