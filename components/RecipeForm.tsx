@@ -6,7 +6,7 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { uploadPhoto, deletePhoto } from "@/lib/images";
 import type { Recipe, Ingredient } from "@/lib/types";
-import { CATEGORIES, UNITS } from "@/lib/types";
+import { CATEGORIES, UNITS, OWNER_ID } from "@/lib/types";
 import Stars from "./Stars";
 import { IconPlus, IconTrash, IconCamera } from "./icons";
 
@@ -65,14 +65,6 @@ export default function RecipeForm({ recipe, existingImageUrl }: Props) {
     setError(null);
 
     const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      setError("Nejste přihlášená.");
-      setBusy(false);
-      return;
-    }
 
     const ingredients: Ingredient[] = rows
       .filter((r) => r.name.trim())
@@ -91,7 +83,7 @@ export default function RecipeForm({ recipe, existingImageUrl }: Props) {
 
     let imagePath = recipe?.image_path ?? null;
     if (file) {
-      const uploaded = await uploadPhoto(user.id, file);
+      const uploaded = await uploadPhoto(OWNER_ID, file);
       if (!uploaded) {
         setError("Nahrání fotky se nepovedlo. Zkuste to znovu.");
         setBusy(false);

@@ -57,6 +57,19 @@ Drobnosti na doladění ve fázi 2:
 - [ ] V Supabase nastavit Site URL na produkční adresu (kvůli registračním e-mailům)
 - [ ] Změna hesla přímo v aplikaci
 
+### ⚠️ Přihlašování dočasně vypnuto (11. 7. 2026)
+Přihlašovací obrazovka dělala potíže (chyba prohlížeče při přihlášení) a bylo potřeba appku
+rychle vyzkoušet. Na žádost uživatelky je přihlašování **dočasně vypnuté** — aplikace je
+teď otevřená pro kohokoli, kdo zná adresu https://moje-recepty-iota.vercel.app.
+
+- [x] `/login` odpojen, appka jede rovnou na hlavní stránku
+- [x] Databáze upravena tak, aby všechna data zůstala navázaná na skutečný účet
+  (zlatenkak@gmail.com), takže až se přihlašování vrátí, žádný recept se neztratí
+- [ ] **Až nebude vadit, že appku uvidí kdokoli s odkazem, vrátit zpět zabezpečení**
+  (přihlašovací obrazovka i uzamčení databáze na jednu uživatelku)
+- [ ] Zjistit a opravit původní příčinu chyby při přihlášení (podezření na poškozený
+  klíč na Vercelu při ručním zadávání přes PowerShell)
+
 ### Fáze 2 — Foto-import ✨ (hlavní kouzlo)
 - [ ] Založení Anthropic účtu a API klíče (provedu krok za krokem; cena ~1 Kč za fotku)
 - [ ] Vyfocení/nahrání stránky z kuchařky → AI vytáhne název, suroviny, postup, porce

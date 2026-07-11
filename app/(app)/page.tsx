@@ -1,16 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getSignedUrls } from "@/lib/images";
 import { normalizeForSearch } from "@/lib/scale";
 import type { Recipe, Ingredient } from "@/lib/types";
 import RecipeCard from "@/components/RecipeCard";
-import { IconSearch, IconLogout, IconPot } from "@/components/icons";
+import { IconSearch, IconPot } from "@/components/icons";
 
 export default function HomePage() {
-  const router = useRouter();
   const [recipes, setRecipes] = useState<Recipe[] | null>(null);
   const [images, setImages] = useState<Record<string, string>>({});
   const [query, setQuery] = useState("");
@@ -57,25 +55,9 @@ export default function HomePage() {
     return rows;
   }, [recipes, query, category, sort]);
 
-  async function signOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
-  }
-
   return (
     <main>
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-medium">Moje recepty</h1>
-        <button
-          onClick={signOut}
-          aria-label="Odhlásit se"
-          className="soft-shadow flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-400"
-        >
-          <IconLogout size={17} />
-        </button>
-      </div>
+      <h1 className="text-2xl font-medium">Moje recepty</h1>
       <p className="mt-0.5 text-sm text-slate-500">Co dnes uvaříme?</p>
 
       <label className="soft-shadow mt-4 flex items-center gap-2 rounded-full bg-white px-4 py-2.5">

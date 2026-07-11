@@ -1,3 +1,5 @@
+export const OWNER_ID = "9130b8f2-b60b-4829-80b1-6a2db1859d94";
+
 export type Ingredient = {
   name: string;
   qty: number | null;
