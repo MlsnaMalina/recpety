@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { getSignedUrls } from "@/lib/images";
 import { normalizeForSearch } from "@/lib/scale";
-import type { Recipe, Ingredient } from "@/lib/types";
+import { recipeSearchText } from "@/lib/recipeParts";
+import type { Recipe } from "@/lib/types";
 import RecipeCard from "@/components/RecipeCard";
 import { IconSearch, IconPot } from "@/components/icons";
 
@@ -42,12 +43,7 @@ export default function HomePage() {
     if (category) rows = rows.filter((r) => r.category === category);
     const q = normalizeForSearch(query.trim());
     if (q) {
-      rows = rows.filter((r) => {
-        if (normalizeForSearch(r.title).includes(q)) return true;
-        return (r.ingredients as Ingredient[]).some((i) =>
-          normalizeForSearch(i.name).includes(q)
-        );
-      });
+      rows = rows.filter((r) => recipeSearchText(r).includes(q));
     }
     if (sort === "top") {
       rows = [...rows].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
@@ -55,10 +51,18 @@ export default function HomePage() {
     return rows;
   }, [recipes, query, category, sort]);
 
+  const total = recipes?.length ?? 0;
+
   return (
     <main>
-      <h1 className="text-2xl font-medium">Moje recepty</h1>
-      <p className="mt-0.5 text-sm text-slate-500">Co dnes uvaříme?</p>
+      <div className="pt-1 text-center">
+        <h1 className="text-2xl font-medium">Moje recepty</h1>
+        <p className="mt-0.5 text-sm text-slate-500">
+          {total > 0
+            ? `${total} ${total === 1 ? "recept" : total < 5 ? "recepty" : "receptů"} · co dnes uvaříme?`
+            : "Co dnes uvaříme?"}
+        </p>
+      </div>
 
       <label className="soft-shadow mt-4 flex items-center gap-2 rounded-full bg-white px-4 py-2.5">
         <IconSearch size={17} className="shrink-0 text-slate-400" />
@@ -124,7 +128,7 @@ export default function HomePage() {
         </div>
       )}
 
-      <div className="mt-4 flex flex-col gap-3">
+      <div className="mt-4">
         {recipes === null ? (
           <p className="py-10 text-center text-sm text-slate-400">Načítám…</p>
         ) : visible.length === 0 ? (
@@ -146,13 +150,15 @@ export default function HomePage() {
             )}
           </div>
         ) : (
-          visible.map((r) => (
-            <RecipeCard
-              key={r.id}
-              recipe={r}
-              imageUrl={r.image_path ? images[r.image_path] : undefined}
-            />
-          ))
+          <div className="grid grid-cols-2 gap-3">
+            {visible.map((r) => (
+              <RecipeCard
+                key={r.id}
+                recipe={r}
+                imageUrl={r.image_path ? images[r.image_path] : undefined}
+              />
+            ))}
+          </div>
         )}
       </div>
     </main>

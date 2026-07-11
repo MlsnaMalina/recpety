@@ -28,48 +28,46 @@ export default function RecipeCard({
   return (
     <Link
       href={`/recept/${recipe.id}`}
-      className="card flex items-center gap-3 p-3 active:scale-[0.99] transition-transform"
+      className="card flex flex-col overflow-hidden active:scale-[0.98] transition-transform"
     >
-      {imageUrl ? (
-        <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl">
+      <span className="relative block aspect-[4/3] w-full">
+        {imageUrl ? (
           <Image
             src={imageUrl}
             alt=""
             fill
-            sizes="56px"
+            sizes="(max-width: 512px) 50vw, 240px"
             className="object-cover"
             unoptimized
           />
-        </span>
-      ) : (
-        <span
-          className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl ${tintFor(
-            recipe.id
-          )}`}
-        >
-          <IconPot size={24} />
-        </span>
-      )}
-      <span className="min-w-0 flex-1">
-        <span className="flex items-center justify-between gap-2">
-          <span className="truncate text-[15px] font-medium">
-            {recipe.title}
+        ) : (
+          <span
+            className={`flex h-full w-full items-center justify-center ${tintFor(
+              recipe.id
+            )}`}
+          >
+            <IconPot size={34} />
           </span>
-          {recipe.rating ? <Stars value={recipe.rating} size={13} /> : null}
+        )}
+        {recipe.rating ? (
+          <span className="absolute bottom-1.5 left-1.5 rounded-full bg-white/90 px-1.5 py-0.5">
+            <Stars value={recipe.rating} size={11} />
+          </span>
+        ) : null}
+      </span>
+
+      <span className="flex flex-1 flex-col gap-0.5 p-3">
+        <span className="line-clamp-2 text-[14px] font-medium leading-snug">
+          {recipe.title}
         </span>
         <span className="mt-0.5 flex items-center gap-1 text-xs text-slate-500">
           {recipe.time_minutes ? (
             <>
-              <IconClock size={13} /> {recipe.time_minutes} min ·{" "}
+              <IconClock size={12} /> {recipe.time_minutes} min ·{" "}
             </>
           ) : null}
           {recipe.category}
         </span>
-        {recipe.source ? (
-          <span className="block truncate text-[11px] text-slate-400">
-            {recipe.source}
-          </span>
-        ) : null}
       </span>
     </Link>
   );

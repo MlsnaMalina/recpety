@@ -34,11 +34,23 @@ const RecipeExtractionSchema = z.object({
         .describe(
           "Jednotka normalizovaná na: g, kg, ml, l, dl, ks, lžíce, lžička, hrnek, špetka, balení, plátek, stroužek — nebo prázdný řetězec"
         ),
+      component: z
+        .string()
+        .describe(
+          "Název části receptu, pokud se recept skládá z více částí (např. Tzatziki, Kuřecí kousky, Pita). Jinak prázdný řetězec."
+        ),
     })
   ),
-  steps: z
-    .array(z.string())
-    .describe("Postup rozdělený na samostatné kroky, bez číslování"),
+  steps: z.array(
+    z.object({
+      text: z.string().describe("Text kroku postupu, bez číslování"),
+      component: z
+        .string()
+        .describe(
+          "Název části receptu, ke které krok patří (stejné názvy jako u surovin). Jinak prázdný řetězec."
+        ),
+    })
+  ),
 });
 
 export type RecipeExtraction = z.infer<typeof RecipeExtractionSchema>;
@@ -52,6 +64,7 @@ Pravidla:
 - Každou surovinu uveď zvlášť. Nadpisy skupin surovin (např. „Těsto:") vynech, nejsou to suroviny.
 - Množství uváděj přepočtené na číslo (½ → 0.5). Slovní množství bez čísla (špetka, dle chuti) patří do unit nebo do názvu, qty pak null.
 - Postup rozděl na krátké samostatné kroky v logickém pořadí.
+- Pokud se recept skládá z několika samostatných částí (např. hlavní jídlo má vlastní omáčku, dip nebo přílohu — „Na tzatziki:", „Kuřecí kousky:", „Pita chleba:"), vyplň u každé suroviny i kroku pole component názvem té části. Používej krátké, výstižné názvy. Pokud je recept jednolitý, nech component prázdné u všech.
 - Nic si nevymýšlej — co v receptu není, nech prázdné či null.`;
 
 type ImageInput = {

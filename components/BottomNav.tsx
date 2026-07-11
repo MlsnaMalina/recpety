@@ -36,13 +36,15 @@ export default function BottomNav() {
           >
             <IconPlus size={26} />
           </Link>
-          <span
-            className="flex cursor-default flex-col items-center gap-0.5 px-3 py-1 text-[11px] text-slate-300"
-            title="Připravujeme"
+          <Link
+            href="/nakup"
+            className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] font-medium ${
+              pathname === "/nakup" ? "text-blue-500" : "text-slate-400"
+            }`}
           >
             <IconCart size={22} />
             Nákup
-          </span>
+          </Link>
         </div>
       </div>
     </nav>

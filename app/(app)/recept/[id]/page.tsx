@@ -9,6 +9,13 @@ import { getSignedUrl } from "@/lib/images";
 import { scaleQty, servingsWord } from "@/lib/scale";
 import { useWakeLock } from "@/lib/useWakeLock";
 import { shareRecipeAsImage } from "@/lib/shareImage";
+import { addIngredientsToShoppingList } from "@/lib/shopping";
+import {
+  recipeComponents,
+  stepText,
+  stepComponent,
+  ingredientComponent,
+} from "@/lib/recipeParts";
 import type { Recipe, RecipeNote } from "@/lib/types";
 import Stars from "@/components/Stars";
 import {
@@ -21,6 +28,7 @@ import {
   IconCheck,
   IconPlus,
   IconShare,
+  IconCart,
 } from "@/components/icons";
 
 export default function RecipeDetailPage({
@@ -37,6 +45,7 @@ export default function RecipeDetailPage({
   const [noteText, setNoteText] = useState("");
   const [missing, setMissing] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [selComp, setSelComp] = useState<string | null>(null);
 
   function showToast(text: string) {
     setToast(text);
@@ -114,6 +123,22 @@ export default function RecipeDetailPage({
     }
   }
 
+  async function addToShopping() {
+    if (!recipe || servings === null) return;
+    const list = selComp
+      ? recipe.ingredients.filter((i) => ingredientComponent(i) === selComp)
+      : recipe.ingredients;
+    const count = await addIngredientsToShoppingList(
+      list,
+      servings / recipe.servings
+    );
+    showToast(
+      count > 0
+        ? `Přidáno do nákupního seznamu (${count} ${count === 1 ? "položka" : count < 5 ? "položky" : "položek"})`
+        : "Recept nemá žádné suroviny"
+    );
+  }
+
   async function addNote(e: React.FormEvent) {
     e.preventDefault();
     if (!recipe || !noteText.trim()) return;
@@ -162,6 +187,13 @@ export default function RecipeDetailPage({
   }
 
   const factor = servings / recipe.servings;
+  const components = recipeComponents(recipe);
+  const visibleIngredients = selComp
+    ? recipe.ingredients.filter((i) => ingredientComponent(i) === selComp)
+    : recipe.ingredients;
+  const visibleSteps = selComp
+    ? recipe.steps.filter((s) => stepComponent(s) === selComp)
+    : recipe.steps;
 
   return (
     <main>
@@ -292,11 +324,39 @@ export default function RecipeDetailPage({
         </button>
       </div>
 
-      {recipe.ingredients.length > 0 && (
+      {components.length > 0 && (
+        <div className="scrollbar-none -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1">
+          <button
+            onClick={() => setSelComp(null)}
+            className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+              selComp === null
+                ? "chip-active-shadow bg-blue-500 text-white"
+                : "soft-shadow bg-white text-slate-500"
+            }`}
+          >
+            Celý recept
+          </button>
+          {components.map((c) => (
+            <button
+              key={c}
+              onClick={() => setSelComp(c)}
+              className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                selComp === c
+                  ? "chip-active-shadow bg-blue-500 text-white"
+                  : "soft-shadow bg-white text-slate-500"
+              }`}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {visibleIngredients.length > 0 && (
         <>
           <h2 className="mt-5 mb-2 text-[15px] font-medium">Suroviny</h2>
           <div className="card px-4 py-1">
-            {recipe.ingredients.map((ing, i) => (
+            {visibleIngredients.map((ing, i) => (
               <div
                 key={i}
                 className="flex items-baseline justify-between gap-3 border-b border-slate-100 py-2.5 text-[15px] last:border-b-0"
@@ -311,22 +371,34 @@ export default function RecipeDetailPage({
         </>
       )}
 
-      {recipe.steps.length > 0 && (
+      {visibleSteps.length > 0 && (
         <>
           <h2 className="mt-5 mb-2 text-[15px] font-medium">Postup</h2>
           <ol className="flex flex-col gap-3">
-            {recipe.steps.map((step, i) => (
+            {visibleSteps.map((step, i) => (
               <li key={i} className="card flex gap-3 p-4">
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-cyan-100 text-sm font-medium text-cyan-700">
                   {i + 1}
                 </span>
                 <span className="text-[15px] leading-relaxed text-slate-700">
-                  {step}
+                  {stepText(step)}
                 </span>
               </li>
             ))}
           </ol>
         </>
+      )}
+
+      {visibleIngredients.length > 0 && (
+        <button
+          onClick={addToShopping}
+          className="soft-shadow mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-white py-3 font-medium text-cyan-600 active:scale-[0.99] transition-transform"
+        >
+          <IconCart size={18} />
+          {selComp
+            ? `Přidat suroviny na „${selComp}" do nákupu`
+            : "Přidat suroviny do nákupu"}
+        </button>
       )}
 
       <button

@@ -79,6 +79,59 @@ function parseNumber(raw: string): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
+const NUM_UNITS: Record<string, number> = {
+  nula: 0, jedna: 1, jeden: 1, jedno: 1, dva: 2, dvě: 2, dve: 2, tři: 3, tri: 3,
+  čtyři: 4, ctyri: 4, pět: 5, pet: 5, šest: 6, sest: 6, sedm: 7, osm: 8,
+  devět: 9, devet: 9,
+};
+const NUM_TEENS: Record<string, number> = {
+  deset: 10, jedenáct: 11, dvanáct: 12, třináct: 13, čtrnáct: 14, patnáct: 15,
+  šestnáct: 16, sedmnáct: 17, osmnáct: 18, devatenáct: 19,
+};
+const NUM_TENS: Record<string, number> = {
+  dvacet: 20, třicet: 30, čtyřicet: 40, padesát: 50, šedesát: 60,
+  sedmdesát: 70, osmdesát: 80, devadesát: 90,
+};
+const NUM_HUNDREDS = new Set(["sto", "stě", "ste", "sta", "set"]);
+const NUM_FRACTIONS: Record<string, number> = { půl: 0.5, pul: 0.5, čtvrt: 0.25, ctvrt: 0.25 };
+
+/** Converts leading Czech number words into a digit, for dictated ingredients. */
+export function parseSpokenIngredient(raw: string): Ingredient {
+  const tokens = raw.trim().split(/\s+/);
+  let total = 0;
+  let current = 0;
+  let consumed = 0;
+  for (const tok of tokens) {
+    const w = tok.toLowerCase().replace(/[.,]$/, "");
+    if (NUM_HUNDREDS.has(w)) {
+      current = (current || 1) * 100;
+      total += current;
+      current = 0;
+    } else if (w in NUM_TEENS) {
+      current += NUM_TEENS[w];
+    } else if (w in NUM_TENS) {
+      current += NUM_TENS[w];
+    } else if (w in NUM_UNITS) {
+      current += NUM_UNITS[w];
+    } else if (w in NUM_FRACTIONS) {
+      current += NUM_FRACTIONS[w];
+      consumed++;
+      break;
+    } else if (w === "a") {
+      // spojka mezi číslovkami, přeskoč
+    } else {
+      break;
+    }
+    consumed++;
+  }
+  const value = total + current;
+  if (consumed > 0 && value > 0) {
+    const rest = tokens.slice(consumed).join(" ");
+    return parseIngredientLine(`${value} ${rest}`);
+  }
+  return parseIngredientLine(raw);
+}
+
 export function parseIngredientLine(raw: string): Ingredient {
   const text = raw
     .replace(/<[^>]+>/g, " ")

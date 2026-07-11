@@ -89,9 +89,20 @@ teď otevřená pro kohokoli, kdo zná adresu https://moje-recepty-iota.vercel.a
 - [ ] Případně později: AI záloha pro weby bez strukturovaných dat (až bude API klíč)
 - [ ] Případně později: stáhnout k receptu i fotku jídla z webu
 
-### Fáze 4 — Nákupní seznam
-- [ ] Výběr jednoho či více receptů → sloučený seznam surovin na nákup
-- [ ] Odškrtávání položek přímo v obchodě
+### Fáze 4 — Nákupní seznam ✅ hotovo 11. 7. 2026
+- [x] Z detailu receptu tlačítko „Přidat suroviny do nákupu" (respektuje počet porcí i vybranou část)
+- [x] Sloučení stejných surovin (sečte množství), ruční přidávání položek
+- [x] Odškrtávání v obchodě, „Smazat koupené"
+- [x] Záložka Nákup ve spodní liště
+
+### Fáze 5 — Vylepšení ✅ hotovo 11. 7. 2026
+- [x] Dělení receptu na části (Tzatziki / Kuřecí kousky / Pita) — přepínač v detailu,
+  zadávání ve formuláři, automatické rozpoznání při focení/importu, zahrnuto do vyhledávání
+- [x] Oprava zadávání surovin (název na celý řádek, množství + jednotka pod ním)
+- [x] Nová ikona aplikace (hrnec s růžovým srdíčkem na modré dlaždici)
+- [x] Hezčí domovská stránka (vycentrovaný nadpis, počet receptů, karty v mřížce 2 sloupce)
+- [x] Diktování hlasem (mikrofon u názvu, surovin i postupu; u surovin převede řeč na
+  množství + jednotku + název; funguje hlavně v Chrome/Androidu)
 
 ## Zásady
 

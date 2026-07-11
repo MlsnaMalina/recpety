@@ -4,7 +4,10 @@ export type Ingredient = {
   name: string;
   qty: number | null;
   unit: string;
+  component?: string;
 };
+
+export type RecipeStep = string | { text: string; component?: string };
 
 export type Recipe = {
   id: string;
@@ -17,7 +20,7 @@ export type Recipe = {
   rating: number | null;
   image_path: string | null;
   ingredients: Ingredient[];
-  steps: string[];
+  steps: RecipeStep[];
   last_cooked: string | null;
   created_at: string;
   updated_at: string;
@@ -42,6 +45,16 @@ export type CookEvent = {
     rating: number | null;
     category: string;
   } | null;
+};
+
+export type ShoppingItem = {
+  id: string;
+  user_id: string;
+  name: string;
+  qty: number | null;
+  unit: string;
+  checked: boolean;
+  created_at: string;
 };
 
 export const CATEGORIES = [

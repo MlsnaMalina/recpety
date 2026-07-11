@@ -1,5 +1,6 @@
 import type { Recipe } from "./types";
 import { scaleQty, servingsWord } from "./scale";
+import { stepText } from "./recipeParts";
 
 const W = 1080;
 const PAD = 80;
@@ -134,7 +135,7 @@ export async function shareRecipeAsImage(
 
     recipe.steps.forEach((step, idx) => {
       font(measure, "400 34px");
-      const lines = wrapText(measure, step, maxW - 70);
+      const lines = wrapText(measure, stepText(step), maxW - 70);
       const baseY = y;
       ops.push((ctx) => {
         ctx.fillStyle = "#cffafe";
