@@ -25,14 +25,19 @@ function LoginForm() {
 
     if (mode === "login") {
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
       if (error) {
+        const m = error.message;
         setMessage(
-          error.message === "Invalid login credentials"
-            ? "Nesprávný e-mail nebo heslo."
-            : "Přihlášení se nepovedlo. Zkuste to znovu."
+          m === "Invalid login credentials"
+            ? "Nesprávný e-mail nebo heslo. Pozor na velká písmena a mezery, které telefon rád přidává."
+            : m.toLowerCase().includes("rate limit")
+              ? "Příliš mnoho pokusů za sebou — minutku počkejte a zkuste to znovu."
+              : m.toLowerCase().includes("email")
+                ? "E-mail nemá správný tvar — zkontrolujte překlepy a mezeru na konci."
+                : `Přihlášení se nepovedlo (${m}).`
         );
         setBusy(false);
         return;
@@ -85,6 +90,10 @@ function LoginForm() {
             onChange={(e) => setEmail(e.target.value)}
             className="soft-shadow mt-1 w-full rounded-xl bg-white px-3 py-2.5 text-base"
             autoComplete="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            inputMode="email"
           />
         </label>
         <label className="text-sm text-slate-600">
