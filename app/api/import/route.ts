@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { parseIngredientLine } from "@/lib/parseIngredient";
+import { extractRecipeFromText } from "@/lib/aiExtract";
 import type { Ingredient } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 type JsonLd = Record<string, unknown>;
 
@@ -27,6 +29,19 @@ function decodeEntities(s: string): string {
 
 function stripHtml(s: string): string {
   return decodeEntities(s.replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
+}
+
+function pageToPlainText(html: string): string {
+  const withoutBlocks = html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/<(?:br|\/p|\/div|\/li|\/h[1-6]|\/tr)[^>]*>/gi, "\n");
+  return decodeEntities(withoutBlocks.replace(/<[^>]+>/g, " "))
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n\s*\n+/g, "\n")
+    .trim()
+    .slice(0, 60_000);
 }
 
 function findRecipeNode(node: unknown): JsonLd | null {
@@ -164,6 +179,24 @@ export async function POST(request: Request) {
   }
 
   if (!recipeNode) {
+    if (process.env.ANTHROPIC_API_KEY) {
+      try {
+        const aiRecipe = await extractRecipeFromText(pageToPlainText(html));
+        if (aiRecipe) {
+          return NextResponse.json({
+            title: aiRecipe.title,
+            category: aiRecipe.category,
+            servings: aiRecipe.servings,
+            time_minutes: aiRecipe.time_minutes,
+            source: target.toString(),
+            ingredients: aiRecipe.ingredients,
+            steps: aiRecipe.steps,
+          });
+        }
+      } catch {
+        // AI záloha selhala — spadneme na srozumitelnou hlášku níže
+      }
+    }
     return NextResponse.json(
       {
         error:

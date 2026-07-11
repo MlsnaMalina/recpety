@@ -70,11 +70,16 @@ teď otevřená pro kohokoli, kdo zná adresu https://moje-recepty-iota.vercel.a
 - [ ] Zjistit a opravit původní příčinu chyby při přihlášení (podezření na poškozený
   klíč na Vercelu při ručním zadávání přes PowerShell)
 
-### Fáze 2 — Foto-import ✨ (hlavní kouzlo)
-- [ ] Založení Anthropic účtu a API klíče (provedu krok za krokem; cena ~1 Kč za fotku)
-- [ ] Vyfocení/nahrání stránky z kuchařky → AI vytáhne název, suroviny, postup, porce
-- [ ] Předvyplněný formulář ke kontrole a doladění před uložením
-- [ ] Podpora více fotek na jeden recept (recept přes dvě strany)
+### Fáze 2 — Foto-import ✨ hotovo 11. 7. 2026
+- [x] Anthropic účet a API klíč (uložen v .env.local a ve Vercelu, jen na serveru)
+- [x] Vyfocení/nahrání stránky z kuchařky → AI (claude-opus-4-8) vytáhne název, suroviny,
+  postup, porce, kategorii; jednotky normalizuje na tvary používané aplikací
+- [x] Předvyplněný formulář ke kontrole a doladění před uložením
+- [x] Podpora až 3 fotek na jeden recept (recept přes více stran)
+- [x] AI záloha pro import z webu — weby bez strojové vizitky (např. kublanka.cz)
+  teď čte AI z textu stránky
+- Ochrany: fotky se zmenšují v telefonu před odesláním, limit velikosti a počtu,
+  jednoduchý rate limit na serveru (klíč je placený a app je bez přihlášení)
 
 ### Fáze 3 — Import z webu ✅ hotovo 11. 7. 2026 (dřív, než se čekalo)
 - [x] Vložení odkazu → aplikace stáhne recept a předvyplní formulář (název, kategorie,
