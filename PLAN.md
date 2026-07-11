@@ -76,8 +76,13 @@ teď otevřená pro kohokoli, kdo zná adresu https://moje-recepty-iota.vercel.a
 - [ ] Předvyplněný formulář ke kontrole a doladění před uložením
 - [ ] Podpora více fotek na jeden recept (recept přes dvě strany)
 
-### Fáze 3 — Import z webu
-- [ ] Vložení odkazu → aplikace stáhne recept a uloží ho ve vašem formátu
+### Fáze 3 — Import z webu ✅ hotovo 11. 7. 2026 (dřív, než se čekalo)
+- [x] Vložení odkazu → aplikace stáhne recept a předvyplní formulář (název, kategorie,
+  porce, čas, suroviny s množstvím, postup, zdroj jako klikací odkaz)
+- Funguje bez AI — čte strukturovaná data (schema.org/Recipe), která má většina
+  receptových webů. Weby bez nich vrátí srozumitelnou hlášku s radou zapsat ručně.
+- [ ] Případně později: AI záloha pro weby bez strukturovaných dat (až bude API klíč)
+- [ ] Případně později: stáhnout k receptu i fotku jídla z webu
 
 ### Fáze 4 — Nákupní seznam
 - [ ] Výběr jednoho či více receptů → sloučený seznam surovin na nákup

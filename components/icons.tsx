@@ -132,6 +132,15 @@ export function IconCheck(p: IconProps) {
   );
 }
 
+export function IconLink(p: IconProps) {
+  return (
+    <svg {...base(p)}>
+      <path d="M10 14a4 4 0 0 0 6 .5l3-3a4 4 0 1 0-5.7-5.6l-1.2 1.2" />
+      <path d="M14 10a4 4 0 0 0-6-.5l-3 3a4 4 0 1 0 5.7 5.6l1.2-1.2" />
+    </svg>
+  );
+}
+
 export function IconCalendar(p: IconProps) {
   return (
     <svg {...base(p)}>

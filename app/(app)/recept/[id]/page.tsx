@@ -234,7 +234,25 @@ export default function RecipeDetailPage({
         <span>{recipe.category}</span>
         {recipe.source ? (
           <span className="inline-flex items-center gap-1">
-            <IconBook size={14} /> {recipe.source}
+            <IconBook size={14} />
+            {recipe.source.startsWith("http") ? (
+              <a
+                href={recipe.source}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-cyan-600 underline decoration-cyan-300 underline-offset-2"
+              >
+                {(() => {
+                  try {
+                    return new URL(recipe.source).hostname.replace(/^www\./, "");
+                  } catch {
+                    return recipe.source;
+                  }
+                })()}
+              </a>
+            ) : (
+              recipe.source
+            )}
           </span>
         ) : null}
       </p>

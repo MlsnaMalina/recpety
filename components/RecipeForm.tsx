@@ -12,9 +12,20 @@ import { IconPlus, IconTrash, IconCamera } from "./icons";
 
 type IngredientRow = { name: string; qty: string; unit: string };
 
+export type RecipePrefill = {
+  title?: string;
+  category?: string;
+  servings?: number | null;
+  time_minutes?: number | null;
+  source?: string;
+  ingredients?: Ingredient[];
+  steps?: string[];
+};
+
 type Props = {
   recipe?: Recipe;
   existingImageUrl?: string | null;
+  prefill?: RecipePrefill;
 };
 
 function toRows(ingredients: Ingredient[]): IngredientRow[] {
@@ -25,21 +36,37 @@ function toRows(ingredients: Ingredient[]): IngredientRow[] {
   }));
 }
 
-export default function RecipeForm({ recipe, existingImageUrl }: Props) {
+export default function RecipeForm({ recipe, existingImageUrl, prefill }: Props) {
   const router = useRouter();
-  const [title, setTitle] = useState(recipe?.title ?? "");
-  const [category, setCategory] = useState(recipe?.category ?? "");
-  const [servings, setServings] = useState(recipe?.servings ?? 4);
-  const [time, setTime] = useState(
-    recipe?.time_minutes ? String(recipe.time_minutes) : ""
+  const [title, setTitle] = useState(recipe?.title ?? prefill?.title ?? "");
+  const [category, setCategory] = useState(
+    recipe?.category ?? prefill?.category ?? ""
   );
-  const [source, setSource] = useState(recipe?.source ?? "");
+  const [servings, setServings] = useState(
+    recipe?.servings ?? prefill?.servings ?? 4
+  );
+  const [time, setTime] = useState(
+    recipe?.time_minutes
+      ? String(recipe.time_minutes)
+      : prefill?.time_minutes
+        ? String(prefill.time_minutes)
+        : ""
+  );
+  const [source, setSource] = useState(recipe?.source ?? prefill?.source ?? "");
   const [rating, setRating] = useState(recipe?.rating ?? 0);
   const [rows, setRows] = useState<IngredientRow[]>(
-    recipe ? toRows(recipe.ingredients) : [{ name: "", qty: "", unit: "" }]
+    recipe
+      ? toRows(recipe.ingredients)
+      : prefill?.ingredients?.length
+        ? toRows(prefill.ingredients)
+        : [{ name: "", qty: "", unit: "" }]
   );
   const [steps, setSteps] = useState<string[]>(
-    recipe?.steps?.length ? recipe.steps : [""]
+    recipe?.steps?.length
+      ? recipe.steps
+      : prefill?.steps?.length
+        ? prefill.steps
+        : [""]
   );
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(
