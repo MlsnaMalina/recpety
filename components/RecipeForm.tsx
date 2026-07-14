@@ -12,7 +12,7 @@ import { useDictation } from "@/lib/useDictation";
 import type { Recipe, Ingredient, RecipeStep } from "@/lib/types";
 import { CATEGORIES, UNITS, OWNER_ID } from "@/lib/types";
 import Stars from "./Stars";
-import { IconPlus, IconTrash, IconCamera, IconMic } from "./icons";
+import { IconPlus, IconTrash, IconCamera, IconMic, IconStack } from "./icons";
 
 type IngredientRow = { name: string; qty: string; unit: string; component: string };
 type StepRow = { text: string; component: string };
@@ -31,6 +31,11 @@ type Props = {
   recipe?: Recipe;
   existingImageUrl?: string | null;
   prefill?: RecipePrefill;
+  variantOf?: {
+    sourceId: string;
+    groupId: string | null;
+    sourceName: string | null;
+  };
 };
 
 function toRows(ingredients: Ingredient[]): IngredientRow[] {
@@ -56,9 +61,15 @@ function hasAnyComponent(
   );
 }
 
-export default function RecipeForm({ recipe, existingImageUrl, prefill }: Props) {
+export default function RecipeForm({
+  recipe,
+  existingImageUrl,
+  prefill,
+  variantOf,
+}: Props) {
   const router = useRouter();
   const dict = useDictation();
+  const showVariantFields = !!variantOf || !!recipe?.variant_group_id;
 
   const initialIngredients = recipe?.ingredients ?? prefill?.ingredients;
   const initialSteps = recipe?.steps ?? prefill?.steps;
@@ -79,6 +90,10 @@ export default function RecipeForm({ recipe, existingImageUrl, prefill }: Props)
   );
   const [source, setSource] = useState(recipe?.source ?? prefill?.source ?? "");
   const [rating, setRating] = useState(recipe?.rating ?? 0);
+  const [variantName, setVariantName] = useState(recipe?.variant_name ?? "");
+  const [isPrimary, setIsPrimary] = useState(
+    recipe?.is_primary_variant ?? true
+  );
   const [rows, setRows] = useState<IngredientRow[]>(
     initialIngredients?.length
       ? toRows(initialIngredients)
@@ -183,9 +198,20 @@ export default function RecipeForm({ recipe, existingImageUrl, prefill }: Props)
     };
 
     if (recipe) {
+      const updatePayload: Record<string, unknown> = { ...payload };
+      if (recipe.variant_group_id) {
+        updatePayload.variant_name = variantName.trim() || recipe.variant_name;
+        updatePayload.is_primary_variant = isPrimary;
+        if (isPrimary && !recipe.is_primary_variant) {
+          await supabase
+            .from("recipes")
+            .update({ is_primary_variant: false })
+            .eq("variant_group_id", recipe.variant_group_id);
+        }
+      }
       const { error: err } = await supabase
         .from("recipes")
-        .update(payload)
+        .update(updatePayload)
         .eq("id", recipe.id);
       if (err) {
         setError("Uložení se nepovedlo. Zkuste to znovu.");
@@ -193,6 +219,34 @@ export default function RecipeForm({ recipe, existingImageUrl, prefill }: Props)
         return;
       }
       router.push(`/recept/${recipe.id}`);
+    } else if (variantOf) {
+      const groupId = variantOf.groupId ?? crypto.randomUUID();
+      const { data, error: err } = await supabase
+        .from("recipes")
+        .insert({
+          ...payload,
+          variant_group_id: groupId,
+          variant_name: variantName.trim() || "Nová varianta",
+          is_primary_variant: false,
+        })
+        .select("id")
+        .single();
+      if (err || !data) {
+        setError("Uložení se nepovedlo. Zkuste to znovu.");
+        setBusy(false);
+        return;
+      }
+      if (!variantOf.groupId) {
+        await supabase
+          .from("recipes")
+          .update({
+            variant_group_id: groupId,
+            is_primary_variant: true,
+            variant_name: variantOf.sourceName?.trim() || "Původní",
+          })
+          .eq("id", variantOf.sourceId);
+      }
+      router.push(`/recept/${data.id}`);
     } else {
       const { data, error: err } = await supabase
         .from("recipes")
@@ -246,6 +300,33 @@ export default function RecipeForm({ recipe, existingImageUrl, prefill }: Props)
           <Mic id="title" onText={setTitle} />
         </div>
       </label>
+
+      {showVariantFields && (
+        <div className="soft-shadow rounded-xl bg-white p-3">
+          <label className="block">
+            <span className="flex items-center gap-1.5 text-sm text-slate-600">
+              <IconStack size={15} className="text-cyan-600" /> Název varianty
+            </span>
+            <input
+              value={variantName}
+              onChange={(e) => setVariantName(e.target.value)}
+              placeholder="Speciální s panko"
+              className={`${inputCls} mt-1`}
+            />
+          </label>
+          {recipe?.variant_group_id && (
+            <label className="mt-2 flex items-center gap-2 text-sm text-slate-600">
+              <input
+                type="checkbox"
+                checked={isPrimary}
+                onChange={(e) => setIsPrimary(e.target.checked)}
+                className="h-4 w-4 shrink-0 accent-cyan-500"
+              />
+              Zobrazit jako hlavní na přehledu
+            </label>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <label className="block">

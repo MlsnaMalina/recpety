@@ -111,6 +111,44 @@ teď otevřená pro kohokoli, kdo zná adresu https://moje-recepty-iota.vercel.a
 - [x] Tlačítko „Rozdělit na části pomocí AI" na detailu receptu — u receptů bez částí
   je AI rozebere jedním ťuknutím (gyros → Kuře / Pita / Tzatziki / Brambory / Podávání)
 
+### Fáze 6 — Varianty receptu ✅ hotovo 11. 7. 2026 (model A)
+
+Varianta = **jiné provedení téhož jídla** (kuřecí řízky klasické × speciální s dijonskou
+hořčicí, česnekem a panko strouhankou). Liší se od „částí": části = jedno jídlo z více dílů
+(gyros = kuře + pita + tzatziki), varianty = děláte buď jednu, nebo druhou. Osy jsou nezávislé
+(varianta může mít i části).
+
+**Zvolený model (rozhodnuto s uživatelkou): A — samostatné propojené recepty.**
+Každá varianta je vlastní recept propojený do skupiny. Vytvoří se zkopírováním a upraví se
+jen rozdíly. Každá varianta má vlastní hvězdičky, poznámky, fotku i záznam do kalendáře.
+Na hlavní stránce jedna kartička + odznáček „N variant".
+
+Datový model:
+- [ ] `recipes.variant_group_id uuid null` — recepty se stejným id jsou varianty téhož jídla
+  (null = běžný samostatný recept)
+- [ ] `recipes.variant_name text null` — název varianty („Klasická po babičce", „Speciální s panko")
+- [ ] `recipes.is_primary_variant boolean default true` — která varianta se ukazuje na kartě
+  seznamu (výchozí = ta původní; jde přepnout)
+
+Chování:
+- [ ] Detail receptu: nahoře přepínač variant (jako u částí) s názvy variant + „+ Přidat variantu"
+- [ ] „Přidat variantu" zkopíruje aktuální recept (suroviny, postup, části, čas, kategorii),
+  otevře formulář předvyplněný, nahoře pole „název varianty" — uložíte jen rozdíly.
+  Při vytvoření první varianty se původnímu receptu doplní výchozí název (např. „Klasická"),
+  který jde přejmenovat v úpravě.
+- [ ] Hlavní stránka: recepty ve skupině se sloučí do jedné karty (primární varianta) s odznáčkem
+  „N variant". Při vyhledávání se ukáže konkrétní varianta, která odpovídá (hledání „panko"
+  najde speciální řízky).
+- [ ] Úprava receptu: pole pro název varianty + možnost přepnout „zobrazit jako hlavní";
+  smazání varianty; když ve skupině zbyde 1 recept, skupina se zruší (stane se samostatným).
+- [ ] Vše ostatní (porce, nákup, sdílení jako obrázek s názvem varianty, dělení na části,
+  kalendář) funguje pro každou variantu zvlášť automaticky.
+- [ ] Migrace bez zásahu do stávajících receptů (sloupce nullable, žádný backfill).
+
+Volitelně později:
+- [ ] „Vytvořit variantu popisem" — nadiktujete/napíšete „jako klasické, ale přidej dijonskou
+  hořčici, česnek a panko" a AI z klasického receptu vytvoří variantu (využije AI kredit).
+
 ## Zásady
 
 - Mobil na prvním místě — v kuchyni je v ruce telefon (velká písmena u postupu,

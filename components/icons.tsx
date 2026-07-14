@@ -132,6 +132,15 @@ export function IconCheck(p: IconProps) {
   );
 }
 
+export function IconStack(p: IconProps) {
+  return (
+    <svg {...base(p)}>
+      <path d="M12 3l9 5-9 5-9-5 9-5z" />
+      <path d="M3 13l9 5 9-5" />
+    </svg>
+  );
+}
+
 export function IconWand(p: IconProps) {
   return (
     <svg {...base(p)}>

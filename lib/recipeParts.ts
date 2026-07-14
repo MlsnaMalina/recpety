@@ -35,6 +35,7 @@ export function recipeComponents(recipe: {
 /** Text used for full-text search — includes component names. */
 export function recipeSearchText(recipe: Recipe): string {
   const parts: string[] = [recipe.title];
+  if (recipe.variant_name) parts.push(recipe.variant_name);
   for (const ing of recipe.ingredients) {
     parts.push(ing.name);
     if (ing.component) parts.push(ing.component);

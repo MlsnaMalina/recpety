@@ -51,7 +51,51 @@ export default function HomePage() {
     return rows;
   }, [recipes, query, category, sort]);
 
-  const total = recipes?.length ?? 0;
+  const displayItems = useMemo(() => {
+    const searching = query.trim().length > 0;
+    if (searching) {
+      return visible.map((r) => ({
+        recipe: r,
+        variantCount: undefined as number | undefined,
+        variantLabel: r.variant_group_id ? r.variant_name ?? undefined : undefined,
+      }));
+    }
+    const seen = new Set<string>();
+    const items: {
+      recipe: Recipe;
+      variantCount: number | undefined;
+      variantLabel: string | undefined;
+    }[] = [];
+    for (const r of visible) {
+      if (!r.variant_group_id) {
+        items.push({ recipe: r, variantCount: undefined, variantLabel: undefined });
+        continue;
+      }
+      if (seen.has(r.variant_group_id)) continue;
+      seen.add(r.variant_group_id);
+      const members = (recipes ?? []).filter(
+        (x) => x.variant_group_id === r.variant_group_id
+      );
+      const primary = members.find((x) => x.is_primary_variant) ?? members[0];
+      items.push({
+        recipe: primary,
+        variantCount: members.length,
+        variantLabel: undefined,
+      });
+    }
+    return items;
+  }, [visible, recipes, query]);
+
+  const total = useMemo(() => {
+    const rows = recipes ?? [];
+    const groups = new Set<string>();
+    let standalone = 0;
+    for (const r of rows) {
+      if (r.variant_group_id) groups.add(r.variant_group_id);
+      else standalone += 1;
+    }
+    return standalone + groups.size;
+  }, [recipes]);
 
   return (
     <main>
@@ -151,11 +195,17 @@ export default function HomePage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3">
-            {visible.map((r) => (
+            {displayItems.map((item) => (
               <RecipeCard
-                key={r.id}
-                recipe={r}
-                imageUrl={r.image_path ? images[r.image_path] : undefined}
+                key={item.recipe.id}
+                recipe={item.recipe}
+                imageUrl={
+                  item.recipe.image_path
+                    ? images[item.recipe.image_path]
+                    : undefined
+                }
+                variantCount={item.variantCount}
+                variantLabel={item.variantLabel}
               />
             ))}
           </div>

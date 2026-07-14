@@ -30,6 +30,7 @@ import {
   IconShare,
   IconCart,
   IconWand,
+  IconStack,
 } from "@/components/icons";
 
 export default function RecipeDetailPage({
@@ -48,6 +49,9 @@ export default function RecipeDetailPage({
   const [toast, setToast] = useState<string | null>(null);
   const [selComp, setSelComp] = useState<string | null>(null);
   const [splitting, setSplitting] = useState(false);
+  const [variants, setVariants] = useState<
+    { id: string; variant_name: string | null }[]
+  >([]);
 
   function showToast(text: string) {
     setToast(text);
@@ -72,6 +76,21 @@ export default function RecipeDetailPage({
         setRecipe(r);
         setServings(r.servings);
         if (r.image_path) setImageUrl(await getSignedUrl(r.image_path));
+        if (r.variant_group_id) {
+          const { data: sibs } = await supabase
+            .from("recipes")
+            .select("id, variant_name, created_at")
+            .eq("variant_group_id", r.variant_group_id)
+            .order("created_at", { ascending: true });
+          setVariants(
+            (sibs ?? []).map((s) => ({
+              id: s.id as string,
+              variant_name: s.variant_name as string | null,
+            }))
+          );
+        } else {
+          setVariants([]);
+        }
       });
     supabase
       .from("recipe_notes")
@@ -218,6 +237,32 @@ export default function RecipeDetailPage({
     if (!confirm(`Opravdu smazat recept „${recipe.title}“?`)) return;
     const supabase = createClient();
     await supabase.from("recipes").delete().eq("id", recipe.id);
+
+    if (recipe.variant_group_id) {
+      const { data: remaining } = await supabase
+        .from("recipes")
+        .select("id, is_primary_variant")
+        .eq("variant_group_id", recipe.variant_group_id)
+        .order("created_at", { ascending: true });
+      const rem = remaining ?? [];
+      if (rem.length === 1) {
+        await supabase
+          .from("recipes")
+          .update({ variant_group_id: null, is_primary_variant: true })
+          .eq("id", rem[0].id as string);
+      } else if (rem.length > 1 && !rem.some((x) => x.is_primary_variant)) {
+        await supabase
+          .from("recipes")
+          .update({ is_primary_variant: true })
+          .eq("id", rem[0].id as string);
+      }
+      if (rem.length >= 1) {
+        router.push(`/recept/${rem[0].id as string}`);
+        router.refresh();
+        return;
+      }
+    }
+
     router.push("/");
     router.refresh();
   }
@@ -348,6 +393,48 @@ export default function RecipeDetailPage({
           {new Date(recipe.last_cooked).toLocaleDateString("cs-CZ")}
         </p>
       ) : null}
+
+      {variants.length > 1 ? (
+        <div className="card mt-4 p-3">
+          <div className="mb-2 flex items-center gap-1.5 text-[11px] text-slate-500">
+            <IconStack size={13} className="text-cyan-600" /> Varianta
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {variants.map((v) =>
+              v.id === recipe.id ? (
+                <span
+                  key={v.id}
+                  className="chip-active-shadow rounded-full bg-cyan-500 px-3.5 py-1.5 text-sm font-medium text-white"
+                >
+                  {v.variant_name || "Varianta"}
+                </span>
+              ) : (
+                <Link
+                  key={v.id}
+                  href={`/recept/${v.id}`}
+                  className="soft-shadow rounded-full bg-white px-3.5 py-1.5 text-sm font-medium text-slate-500"
+                >
+                  {v.variant_name || "Varianta"}
+                </Link>
+              )
+            )}
+            <Link
+              href={`/recept/novy?variantOf=${recipe.id}`}
+              aria-label="Přidat variantu"
+              className="soft-shadow flex items-center rounded-full bg-white px-3 py-1.5 text-sm font-medium text-cyan-600"
+            >
+              <IconPlus size={15} />
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <Link
+          href={`/recept/novy?variantOf=${recipe.id}`}
+          className="soft-shadow mt-3 inline-flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-sm font-medium text-cyan-600"
+        >
+          <IconStack size={14} /> Přidat variantu
+        </Link>
+      )}
 
       <div className="card mt-4 flex items-center justify-between px-4 py-2.5">
         <button

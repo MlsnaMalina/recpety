@@ -1,18 +1,65 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import RecipeForm, { type RecipePrefill } from "@/components/RecipeForm";
 import { fileToEncodedImage } from "@/lib/clientImage";
-import { IconBack, IconLink, IconCamera } from "@/components/icons";
+import type { Recipe } from "@/lib/types";
+import { IconBack, IconLink, IconCamera, IconStack } from "@/components/icons";
 
-export default function NewRecipePage() {
+type VariantContext = {
+  sourceId: string;
+  groupId: string | null;
+  sourceName: string | null;
+};
+
+function NewRecipeInner() {
+  const params = useSearchParams();
+  const variantOfId = params.get("variantOf");
+
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState<"url" | "photo" | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [prefill, setPrefill] = useState<RecipePrefill | null>(null);
   const [formKey, setFormKey] = useState(0);
   const [photoCount, setPhotoCount] = useState(0);
+
+  const [variantCtx, setVariantCtx] = useState<VariantContext | null>(null);
+  const [variantTitle, setVariantTitle] = useState("");
+  const [variantLoading, setVariantLoading] = useState(!!variantOfId);
+
+  useEffect(() => {
+    if (!variantOfId) return;
+    const supabase = createClient();
+    supabase
+      .from("recipes")
+      .select("*")
+      .eq("id", variantOfId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          const r = data as Recipe;
+          setVariantTitle(r.title);
+          setPrefill({
+            title: r.title,
+            category: r.category,
+            servings: r.servings,
+            time_minutes: r.time_minutes,
+            source: r.source ?? "",
+            ingredients: r.ingredients,
+            steps: r.steps,
+          });
+          setVariantCtx({
+            sourceId: r.id,
+            groupId: r.variant_group_id,
+            sourceName: r.variant_name,
+          });
+        }
+        setVariantLoading(false);
+      });
+  }, [variantOfId]);
 
   function applyPrefill(data: RecipePrefill) {
     setPrefill(data);
@@ -75,6 +122,44 @@ export default function NewRecipePage() {
     }
     setLoading(null);
     setPhotoCount(0);
+  }
+
+  if (variantOfId) {
+    return (
+      <main>
+        <div className="mb-4 flex items-center gap-3">
+          <Link
+            href={`/recept/${variantOfId}`}
+            aria-label="Zpět"
+            className="soft-shadow flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-500"
+          >
+            <IconBack size={18} />
+          </Link>
+          <h1 className="text-xl font-medium">Nová varianta</h1>
+        </div>
+
+        {variantLoading ? (
+          <p className="py-10 text-center text-sm text-slate-400">Načítám…</p>
+        ) : (
+          <>
+            <div className="card mb-5 flex items-start gap-3 p-4">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cyan-100 text-cyan-700">
+                <IconStack size={16} />
+              </span>
+              <p className="text-sm text-slate-600">
+                Varianta receptu „{variantTitle}". Recept je předvyplněný —
+                pojmenujte variantu a upravte jen to, v čem se liší.
+              </p>
+            </div>
+            <RecipeForm
+              key={formKey}
+              prefill={prefill ?? undefined}
+              variantOf={variantCtx ?? undefined}
+            />
+          </>
+        )}
+      </main>
+    );
   }
 
   return (
@@ -166,12 +251,20 @@ export default function NewRecipePage() {
       )}
       {prefill && !importError && !loading && (
         <p className="mb-5 rounded-xl bg-cyan-50 px-3 py-2 text-sm text-cyan-800">
-          Recept „{prefill.title || "bez názvu"}“ je načtený ve formuláři níže —
+          Recept „{prefill.title || "bez názvu"}" je načtený ve formuláři níže —
           zkontrolujte ho a uložte.
         </p>
       )}
 
       <RecipeForm key={formKey} prefill={prefill ?? undefined} />
     </main>
+  );
+}
+
+export default function NewRecipePage() {
+  return (
+    <Suspense>
+      <NewRecipeInner />
+    </Suspense>
   );
 }

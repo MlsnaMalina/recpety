@@ -63,6 +63,17 @@ export async function shareRecipeAsImage(
     y += 78;
   }
 
+  if (recipe.variant_name) {
+    const vn = recipe.variant_name;
+    const ly = y + 30;
+    ops.push((ctx) => {
+      font(ctx, "400 32px");
+      ctx.fillStyle = CYAN;
+      ctx.fillText(vn, PAD, ly);
+    });
+    y += 46;
+  }
+
   if (recipe.rating) {
     const rating = recipe.rating;
     const ly = y + 40;

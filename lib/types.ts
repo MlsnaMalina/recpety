@@ -22,6 +22,9 @@ export type Recipe = {
   ingredients: Ingredient[];
   steps: RecipeStep[];
   last_cooked: string | null;
+  variant_group_id: string | null;
+  variant_name: string | null;
+  is_primary_variant: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -44,6 +47,7 @@ export type CookEvent = {
     title: string;
     rating: number | null;
     category: string;
+    variant_name: string | null;
   } | null;
 };
 

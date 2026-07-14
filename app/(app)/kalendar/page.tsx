@@ -27,7 +27,7 @@ export default function CalendarPage() {
     const supabase = createClient();
     supabase
       .from("cook_events")
-      .select("*, recipes(title, rating, category)")
+      .select("*, recipes(title, rating, category, variant_name)")
       .order("cooked_on", { ascending: false })
       .then(({ data }) => setEvents((data ?? []) as CookEvent[]));
   }, []);
@@ -167,6 +167,12 @@ export default function CalendarPage() {
               >
                 <span className="block truncate text-[15px] font-medium">
                   {e.recipes?.title ?? "Smazaný recept"}
+                  {e.recipes?.variant_name ? (
+                    <span className="font-normal text-cyan-600">
+                      {" "}
+                      · {e.recipes.variant_name}
+                    </span>
+                  ) : null}
                 </span>
                 <span className="mt-0.5 flex items-center gap-2 text-xs text-slate-500">
                   {e.recipes?.category}
