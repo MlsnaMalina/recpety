@@ -47,19 +47,28 @@ export function scaleQty(
     return { value: null, text: unit ? unit : "podle chuti" };
   }
   const raw = qty * factor;
+  const exact = factor === 1;
   let value: number;
 
   if (unit === "g" || unit === "ml") {
-    value = raw < 100 ? Math.round(raw / 5) * 5 : Math.round(raw / 10) * 10;
-    if (value === 0) value = Math.round(raw);
+    if (exact) {
+      value = qty;
+    } else {
+      value = raw < 100 ? Math.round(raw / 5) * 5 : Math.round(raw / 10) * 10;
+      if (value === 0) value = Math.round(raw);
+    }
     return { value, text: `${value.toLocaleString("cs-CZ")} ${unit}` };
   }
   if (unit === "kg" || unit === "l") {
-    value = Math.round(raw * 100) / 100;
+    value = exact ? qty : Math.round(raw * 100) / 100;
     return { value, text: `${value.toLocaleString("cs-CZ")} ${unit}` };
   }
-  value = Math.round(raw * 4) / 4;
-  if (value === 0) value = 0.25;
+  if (exact) {
+    value = qty;
+  } else {
+    value = Math.round(raw * 4) / 4;
+    if (value === 0) value = 0.25;
+  }
   return { value, text: `${formatNumber(value)} ${unitWord(unit, value)}` };
 }
 
