@@ -1,23 +1,36 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { scaleQty } from "@/lib/scale";
 import type { ShoppingItem } from "@/lib/types";
 import { IconPlus, IconTrash, IconCart, IconCheck } from "@/components/icons";
+import LoadError from "@/components/LoadError";
 
 export default function ShoppingPage() {
   const [items, setItems] = useState<ShoppingItem[] | null>(null);
+  const [failed, setFailed] = useState(false);
   const [newItem, setNewItem] = useState("");
 
-  useEffect(() => {
+  const load = useCallback(() => {
     const supabase = createClient();
-    supabase
+    return supabase
       .from("shopping_items")
       .select("*")
       .order("created_at", { ascending: true })
-      .then(({ data }) => setItems((data ?? []) as ShoppingItem[]));
+      .then(({ data, error }) => {
+        if (error) {
+          setFailed(true);
+          return;
+        }
+        setFailed(false);
+        setItems((data ?? []) as ShoppingItem[]);
+      });
   }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const sorted = useMemo(() => {
     const rows = items ?? [];
@@ -100,7 +113,9 @@ export default function ShoppingPage() {
       </form>
 
       <div className="mt-4 flex flex-col gap-2">
-        {items === null ? (
+        {failed ? (
+          <LoadError what="nákupní seznam" onRetry={load} />
+        ) : items === null ? (
           <p className="py-10 text-center text-sm text-slate-400">Načítám…</p>
         ) : sorted.length === 0 ? (
           <div className="card flex flex-col items-center gap-2 px-6 py-10 text-center">

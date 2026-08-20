@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useCallback, useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -18,6 +18,7 @@ import {
 } from "@/lib/recipeParts";
 import type { Recipe, RecipeNote, RecipeStep } from "@/lib/types";
 import Stars from "@/components/Stars";
+import LoadError from "@/components/LoadError";
 import {
   IconBack,
   IconClock,
@@ -46,6 +47,7 @@ export default function RecipeDetailPage({
   const [servings, setServings] = useState<number | null>(null);
   const [noteText, setNoteText] = useState("");
   const [missing, setMissing] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [selComp, setSelComp] = useState<string | null>(null);
   const [splitting, setSplitting] = useState(false);
@@ -60,45 +62,62 @@ export default function RecipeDetailPage({
 
   useWakeLock();
 
-  useEffect(() => {
+  const hydrate = useCallback(
+    async (r: Recipe) => {
+      const supabase = createClient();
+      setRecipe(r);
+      setServings(r.servings);
+      if (r.image_path) setImageUrl(await getSignedUrl(r.image_path));
+      if (r.variant_group_id) {
+        const { data: sibs } = await supabase
+          .from("recipes")
+          .select("id, variant_name, created_at")
+          .eq("variant_group_id", r.variant_group_id)
+          .order("created_at", { ascending: true });
+        setVariants(
+          (sibs ?? []).map((s) => ({
+            id: s.id as string,
+            variant_name: s.variant_name as string | null,
+          }))
+        );
+      } else {
+        setVariants([]);
+      }
+
+      const { data: noteRows } = await supabase
+        .from("recipe_notes")
+        .select("*")
+        .eq("recipe_id", id)
+        .order("created_at", { ascending: false });
+      setNotes((noteRows ?? []) as RecipeNote[]);
+    },
+    [id]
+  );
+
+  const load = useCallback(() => {
     const supabase = createClient();
-    supabase
+    return supabase
       .from("recipes")
       .select("*")
       .eq("id", id)
       .maybeSingle()
-      .then(async ({ data }) => {
+      .then(async ({ data, error }) => {
+        if (error) {
+          setFailed(true);
+          return;
+        }
         if (!data) {
           setMissing(true);
           return;
         }
-        const r = data as Recipe;
-        setRecipe(r);
-        setServings(r.servings);
-        if (r.image_path) setImageUrl(await getSignedUrl(r.image_path));
-        if (r.variant_group_id) {
-          const { data: sibs } = await supabase
-            .from("recipes")
-            .select("id, variant_name, created_at")
-            .eq("variant_group_id", r.variant_group_id)
-            .order("created_at", { ascending: true });
-          setVariants(
-            (sibs ?? []).map((s) => ({
-              id: s.id as string,
-              variant_name: s.variant_name as string | null,
-            }))
-          );
-        } else {
-          setVariants([]);
-        }
+        setFailed(false);
+        await hydrate(data as Recipe);
       });
-    supabase
-      .from("recipe_notes")
-      .select("*")
-      .eq("recipe_id", id)
-      .order("created_at", { ascending: false })
-      .then(({ data }) => setNotes((data ?? []) as RecipeNote[]));
-  }, [id]);
+  }, [id, hydrate]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   async function setRating(value: number) {
     if (!recipe) return;
@@ -265,6 +284,14 @@ export default function RecipeDetailPage({
 
     router.push("/");
     router.refresh();
+  }
+
+  if (failed) {
+    return (
+      <main className="py-10">
+        <LoadError what="tento recept" onRetry={load} />
+      </main>
+    );
   }
 
   if (missing) {

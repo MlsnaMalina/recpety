@@ -1,28 +1,35 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { getSignedUrls } from "@/lib/images";
 import { normalizeForSearch } from "@/lib/scale";
 import { recipeSearchText } from "@/lib/recipeParts";
 import type { Recipe } from "@/lib/types";
 import RecipeCard from "@/components/RecipeCard";
+import LoadError from "@/components/LoadError";
 import { IconSearch, IconPot } from "@/components/icons";
 
 export default function HomePage() {
   const [recipes, setRecipes] = useState<Recipe[] | null>(null);
+  const [failed, setFailed] = useState(false);
   const [images, setImages] = useState<Record<string, string>>({});
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string | null>(null);
   const [sort, setSort] = useState<"newest" | "top">("newest");
 
-  useEffect(() => {
+  const load = useCallback(() => {
     const supabase = createClient();
-    supabase
+    return supabase
       .from("recipes")
       .select("*")
       .order("created_at", { ascending: false })
-      .then(async ({ data }) => {
+      .then(async ({ data, error }) => {
+        if (error) {
+          setFailed(true);
+          return;
+        }
+        setFailed(false);
         const rows = (data ?? []) as Recipe[];
         setRecipes(rows);
         const paths = rows
@@ -31,6 +38,10 @@ export default function HomePage() {
         setImages(await getSignedUrls(paths));
       });
   }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const categories = useMemo(() => {
     const set = new Set<string>();
@@ -173,7 +184,9 @@ export default function HomePage() {
       )}
 
       <div className="mt-4">
-        {recipes === null ? (
+        {failed ? (
+          <LoadError what="recepty" onRetry={load} />
+        ) : recipes === null ? (
           <p className="py-10 text-center text-sm text-slate-400">Načítám…</p>
         ) : visible.length === 0 ? (
           <div className="card flex flex-col items-center gap-2 px-6 py-10 text-center">

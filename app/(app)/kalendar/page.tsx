@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { CookEvent } from "@/lib/types";
 import Stars from "@/components/Stars";
+import LoadError from "@/components/LoadError";
 import { IconBack, IconTrash, IconPot } from "@/components/icons";
 
 const DAY_LABELS = ["Po", "Út", "St", "Čt", "Pá", "So", "Ne"];
@@ -21,16 +22,28 @@ export default function CalendarPage() {
     () => new Date(today.getFullYear(), today.getMonth(), 1)
   );
   const [events, setEvents] = useState<CookEvent[]>([]);
+  const [failed, setFailed] = useState(false);
   const [selected, setSelected] = useState<string>(toKey(today));
 
-  useEffect(() => {
+  const load = useCallback(() => {
     const supabase = createClient();
-    supabase
+    return supabase
       .from("cook_events")
       .select("*, recipes(title, rating, category, variant_name)")
       .order("cooked_on", { ascending: false })
-      .then(({ data }) => setEvents((data ?? []) as CookEvent[]));
+      .then(({ data, error }) => {
+        if (error) {
+          setFailed(true);
+          return;
+        }
+        setFailed(false);
+        setEvents((data ?? []) as CookEvent[]);
+      });
   }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const byDay = useMemo(() => {
     const map = new Map<string, CookEvent[]>();
@@ -80,6 +93,12 @@ export default function CalendarPage() {
       <p className="mt-0.5 text-sm text-slate-500">
         Co se kdy vařilo u vás doma
       </p>
+
+      {failed && (
+        <div className="mt-4">
+          <LoadError what="kalendář vaření" onRetry={load} />
+        </div>
+      )}
 
       <div className="card mt-4 p-4">
         <div className="mb-3 flex items-center justify-between">

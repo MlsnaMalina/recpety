@@ -207,3 +207,13 @@ export function IconStar({
     </svg>
   );
 }
+
+export function IconCloudOff(p: IconProps) {
+  return (
+    <svg {...base(p)}>
+      <path d="M8.5 18.5h8a4 4 0 0 0 .8-7.9 6 6 0 0 0-8-4.4" />
+      <path d="M6.3 8.9A4.8 4.8 0 0 0 7.5 18.5" />
+      <path d="m3.5 3.5 17 17" />
+    </svg>
+  );
+}
