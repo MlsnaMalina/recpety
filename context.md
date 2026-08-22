@@ -64,12 +64,14 @@ stránku místo na `/auth/callback`. `AuthGate` proto pozná parametry obnovy
 a přesměruje na `/nove-heslo`.
 
 **POTVRZENO 22. 8. 2026:** Supabase projekt má v Authentication → URL
-Configuration tovární nastavení, tedy Site URL  a prázdný
+Configuration tovární nastavení, tedy Site URL `http://localhost:3000` a prázdný
 seznam Redirect URLs. Odkaz z e-mailu proto skončil na localhostu a na telefonu
 hlásil, že web odmítá připojení.
 
 Nutné nastavit v dashboardu (přes MCP se to měnit nedá):
 
-- Site URL: - Redirect URLs: 
+- Site URL: `https://moje-recepty-iota.vercel.app`
+- Redirect URLs: `https://moje-recepty-iota.vercel.app/**`
+
 Po změně je potřeba nechat si poslat NOVÝ odkaz — ten starý už míří na localhost.
 Stejná věc rozbíjí i potvrzovací e-mail při registraci.
