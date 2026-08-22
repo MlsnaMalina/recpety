@@ -38,3 +38,31 @@ Vercelu), projekt zase usne.
 z Supabase builderu se `setState` uvnitř `.then()`. Async varianta se
 `setState` po `await` je sice čitelnější, ale pravidlo
 `react-hooks/set-state-in-effect` ji hlásí jako chybu.
+
+## 22. 8. 2026 — obnova zapomenutého hesla
+
+**Proč:** účet vytvořila dřívější session i s heslem, které uživatelka nikdy
+neviděla. Po odhlášení neexistovala cesta zpět — přihlašovací obrazovka uměla
+jen přihlášení a registraci.
+
+**Pravidlo do budoucna:** heslo si volí uživatelka, nikdy ho negeneruj potichu.
+Aplikace s přihlášením musí mít obnovu hesla hned od začátku.
+
+**Jak to funguje:**
+
+1. `/login` má třetí režim `reset` — odkaz *Zapomenuté heslo?* pošle přes
+   `resetPasswordForEmail` odkaz na e-mail.
+2. Odkaz míří na `/auth/callback?next=/nove-heslo`. Callback zvládne obě
+   podoby odkazu: `code` (PKCE, stejný prohlížeč) i `token_hash` + `type`.
+   Parametr `next` se validuje — jen cesta uvnitř aplikace, žádné `//cizi.web`.
+3. `/nove-heslo` nastaví heslo přes `updateUser`. Bez platné session ukáže
+   *Odkaz už neplatí* s tlačítkem na nový.
+
+**Pojistka:** pokud Supabase produkční adresu nezná, hodí odkaz na úvodní
+stránku místo na `/auth/callback`. `AuthGate` proto pozná parametry obnovy
+(`code`, `token_hash`, `type=recovery`) i událost `PASSWORD_RECOVERY`
+a přesměruje na `/nove-heslo`.
+
+**Nezkontrolováno:** seznam povolených Redirect URLs v nastavení Supabase
+(přes MCP se číst nedá). Když by odkaz z e-mailu končil na úvodní stránce,
+je to tohle — doplnit adresu do Authentication → URL Configuration.

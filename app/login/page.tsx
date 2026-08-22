@@ -4,15 +4,17 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
+type Mode = "login" | "signup" | "reset";
+
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(
     params.get("error") === "confirm"
-      ? "Potvrzení se nepovedlo, zkuste odkaz z e-mailu otevřít znovu."
+      ? "Odkaz už neplatí nebo byl otevřen v jiném prohlížeči. Nechte si prosím poslat nový."
       : null
   );
   const [busy, setBusy] = useState(false);
@@ -22,6 +24,20 @@ function LoginForm() {
     setBusy(true);
     setMessage(null);
     const supabase = createClient();
+
+    if (mode === "reset") {
+      const { error } = await supabase.auth.resetPasswordForEmail(
+        email.trim(),
+        { redirectTo: `${location.origin}/auth/callback?next=/nove-heslo` }
+      );
+      setMessage(
+        error && error.message.toLowerCase().includes("rate limit")
+          ? "Odkaz jsme posílali před chvílí — počkejte minutku a zkuste to znovu."
+          : "Pokud u nás tento e-mail je, poslali jsme na něj odkaz pro nastavení nového hesla. Otevřete ho na tomhle telefonu, jinak odkaz nebude fungovat."
+      );
+      setBusy(false);
+      return;
+    }
 
     if (mode === "login") {
       const { error } = await supabase.auth.signInWithPassword({
@@ -68,6 +84,11 @@ function LoginForm() {
     setBusy(false);
   }
 
+  function switchTo(next: Mode) {
+    setMode(next);
+    setMessage(null);
+  }
+
   return (
     <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6 pb-24">
       <div className="mb-8 text-center">
@@ -76,7 +97,9 @@ function LoginForm() {
         </div>
         <h1 className="text-2xl font-medium">Moje recepty</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Vaše kuchařka, vždy po ruce
+          {mode === "reset"
+            ? "Pošleme vám odkaz na nové heslo"
+            : "Vaše kuchařka, vždy po ruce"}
         </p>
       </div>
 
@@ -96,18 +119,23 @@ function LoginForm() {
             inputMode="email"
           />
         </label>
-        <label className="text-sm text-slate-600">
-          Heslo
-          <input
-            type="password"
-            required
-            minLength={6}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="soft-shadow mt-1 w-full rounded-xl bg-white px-3 py-2.5 text-base"
-            autoComplete={mode === "login" ? "current-password" : "new-password"}
-          />
-        </label>
+
+        {mode !== "reset" && (
+          <label className="text-sm text-slate-600">
+            Heslo
+            <input
+              type="password"
+              required
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="soft-shadow mt-1 w-full rounded-xl bg-white px-3 py-2.5 text-base"
+              autoComplete={
+                mode === "login" ? "current-password" : "new-password"
+              }
+            />
+          </label>
+        )}
 
         {message && (
           <p className="rounded-xl bg-pink-50 px-3 py-2 text-sm text-pink-700">
@@ -124,21 +152,32 @@ function LoginForm() {
             ? "Pracuji…"
             : mode === "login"
               ? "Přihlásit se"
-              : "Vytvořit účet"}
+              : mode === "signup"
+                ? "Vytvořit účet"
+                : "Poslat odkaz na e-mail"}
         </button>
       </form>
 
+      {mode === "login" && (
+        <button
+          type="button"
+          onClick={() => switchTo("reset")}
+          className="mt-4 text-sm text-cyan-600"
+        >
+          Zapomenuté heslo?
+        </button>
+      )}
+
       <button
         type="button"
-        onClick={() => {
-          setMode(mode === "login" ? "signup" : "login");
-          setMessage(null);
-        }}
-        className="mt-4 text-sm text-cyan-600"
+        onClick={() => switchTo(mode === "login" ? "signup" : "login")}
+        className="mt-3 text-sm text-cyan-600"
       >
         {mode === "login"
           ? "Nemáte účet? Vytvořte si ho"
-          : "Už máte účet? Přihlaste se"}
+          : mode === "signup"
+            ? "Už máte účet? Přihlaste se"
+            : "Zpět na přihlášení"}
       </button>
     </main>
   );
