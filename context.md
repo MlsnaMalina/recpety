@@ -63,6 +63,13 @@ stránku místo na `/auth/callback`. `AuthGate` proto pozná parametry obnovy
 (`code`, `token_hash`, `type=recovery`) i událost `PASSWORD_RECOVERY`
 a přesměruje na `/nove-heslo`.
 
-**Nezkontrolováno:** seznam povolených Redirect URLs v nastavení Supabase
-(přes MCP se číst nedá). Když by odkaz z e-mailu končil na úvodní stránce,
-je to tohle — doplnit adresu do Authentication → URL Configuration.
+**POTVRZENO 22. 8. 2026:** Supabase projekt má v Authentication → URL
+Configuration tovární nastavení, tedy Site URL  a prázdný
+seznam Redirect URLs. Odkaz z e-mailu proto skončil na localhostu a na telefonu
+hlásil, že web odmítá připojení.
+
+Nutné nastavit v dashboardu (přes MCP se to měnit nedá):
+
+- Site URL: - Redirect URLs: 
+Po změně je potřeba nechat si poslat NOVÝ odkaz — ten starý už míří na localhost.
+Stejná věc rozbíjí i potvrzovací e-mail při registraci.
